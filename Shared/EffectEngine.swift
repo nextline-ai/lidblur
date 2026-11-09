@@ -59,7 +59,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private var observers: [NSObjectProtocol] = []
 
     /// Degrees above `openAngle` at which capture is pre-started so the first frame is ready.
-    private let prewarmDegrees = 10.0
+    private let prewarmDegrees = 20.0
     private let eps = 0.0005
 
     init(defaultMode: InputMode) {
@@ -75,7 +75,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         }
         installObservers()
         if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
-        sensor.setPollingRate(sensor.isAvailable ? 20 : 0)
+        sensor.setPollingRate(sensor.isAvailable ? 10 : 0)
         idleTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.idleTick() }
         }
@@ -91,7 +91,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         switch inputMode {
         case .manual: return manualProgress
         case .sensor:
-            if let a = sensor.angle { return params.progress(forAngle: a) }
+            if let a = sensor.smoothAngle() { return params.progress(forAngle: a) }
             return 1
         }
     }
@@ -131,7 +131,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             if now - (farSince ?? now) > 3 { stopCapture() }
         }
         if needsEffect { activate() }
-        sensor.setPollingRate(sensor.isAvailable ? ((near || needsEffect) ? 120 : 20) : 0)
+        sensor.setPollingRate(sensor.isAvailable ? ((near || needsEffect) ? 30 : 10) : 0)
     }
 
     private func activate() {
@@ -346,6 +346,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         if !sensor.isAvailable { _ = sensor.openDevice() }
         sensorStatus = sensor.statusText
         if inputMode == .sensor, sensor.isAvailable, let a = sensor.readOnce() {
+            sensor.resetSmoothing()
             // Start from the current lid position instead of easing from a stale value.
             smoothed = params.progress(forAngle: a)
             if smoothed < 1 - eps { activate() }

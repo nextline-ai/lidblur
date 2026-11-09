@@ -34,6 +34,7 @@ struct TuningView: View {
                     ParamSlider("카메라 거리 (화면 높이 배)", value: $engine.params.coverCameraDistance, range: 1...12)
                     ParamSlider("카메라 높이 (시작)", value: $engine.params.coverCameraHeightStart, range: 0...1)
                     ParamSlider("카메라 높이 (끝)", value: $engine.params.coverCameraHeightEnd, range: 0...1)
+                    Toggle("위아래로 눌리지 않게 (높이 유지)", isOn: $engine.params.coverKeepHeight)
                     ParamSlider("내용 밀림", value: $engine.params.coverContentShift, range: 0...0.5, format: "%.3f")
                     Toggle("블러·음영이 경첩(아래) 쪽으로 강해짐 (원본은 꺼짐: 바깥쪽 끝으로 강해짐)", isOn: $engine.params.coverTowardHinge)
                 }
@@ -47,6 +48,7 @@ struct TuningView: View {
                     ParamSlider("블러 연동 최저 밝기", value: $engine.params.coverShadeLow, range: 0...1)
                     ParamSlider("경첩 쪽 어두워짐 이득", value: $engine.params.coverWipeShadeGain, range: 0...6)
                     ParamSlider("좌우 가장자리 띠", value: $engine.params.coverEdgeBand, range: 0.001...0.5, format: "%.3f")
+                    ParamSlider("좌우 띠가 다 나타나는 wipe", value: $engine.params.coverEdgeFadeWipe, range: 0.001...0.5, format: "%.3f")
                 }
             }
             Section("덮개 각도 → 진행도") {

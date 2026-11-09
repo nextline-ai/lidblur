@@ -29,8 +29,34 @@ final class LidAngleSensor {
 
     var isAvailable: Bool { lock.withLock { device != nil } }
 
-    /// Latest angle in degrees, or nil if the sensor is unavailable.
+    /// Latest raw angle in degrees, or nil if the sensor is unavailable.
     var angle: Double? { lock.withLock { _angle } }
+
+    /// The sensor only refreshes about every 100 ms in whole degrees. To get continuous motion, each new
+    /// sample is approached linearly over one sensor period, starting from the value shown at that moment.
+    static let samplePeriod: CFTimeInterval = 0.1
+    private var segStart: Double?
+    private var segTarget: Double = 0
+    private var segTime: CFTimeInterval = 0
+
+    /// Continuous angle estimate (about one sensor period behind the raw value).
+    func smoothAngle(at now: CFTimeInterval = CACurrentMediaTime()) -> Double? {
+        lock.withLock {
+            guard let start = segStart else { return _angle }
+            let a = min(1, max(0, (now - segTime) / Self.samplePeriod))
+            return start + (segTarget - start) * a
+        }
+    }
+
+    private func pushSample(_ v: Double, at now: CFTimeInterval) {
+        // called with lock held
+        if segStart == nil { segStart = v; segTarget = v; segTime = now; return }
+        let a = min(1, max(0, (now - segTime) / Self.samplePeriod))
+        let current = segStart! + (segTarget - segStart!) * a
+        segStart = current
+        segTarget = v
+        segTime = now
+    }
 
     @discardableResult
     func openDevice() -> Bool {
@@ -50,7 +76,7 @@ final class LidAngleSensor {
             return false
         }
         if let a = readOnce() {
-            lock.withLock { _angle = a; _timestamp = CACurrentMediaTime() }
+            lock.withLock { _angle = a; _timestamp = CACurrentMediaTime(); segStart = nil; pushSample(a, at: _timestamp) }
             statusText = "사용 가능"
             return true
         }
@@ -72,6 +98,11 @@ final class LidAngleSensor {
     }
 
     /// Polls in the background at the given rate (0 stops polling).
+    /// Jump the smoothed estimate to the current raw value (e.g. after wake).
+    func resetSmoothing() {
+        lock.withLock { if let a = _angle { segStart = nil; pushSample(a, at: CACurrentMediaTime()) } }
+    }
+
     func setPollingRate(_ hz: Double) {
         guard hz != currentHz else { return }
         currentHz = hz
@@ -85,8 +116,14 @@ final class LidAngleSensor {
             guard let self else { return }
             if let a = self.readOnce() {
                 failures = 0
-                if a != self.lock.withLock({ self._angle }) { EventLog.shared.log("angle", a) }
-                self.lock.withLock { self._angle = a; self._timestamp = CACurrentMediaTime() }
+                let now = CACurrentMediaTime()
+                self.lock.withLock {
+                    if a != self._angle {
+                        self.pushSample(a, at: now)
+                        EventLog.shared.log("angle", a)
+                    }
+                    self._angle = a; self._timestamp = now
+                }
             } else {
                 failures += 1
                 if failures == 1 { EventLog.shared.log("sensorReadFailed") }

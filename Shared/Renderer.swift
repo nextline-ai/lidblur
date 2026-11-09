@@ -41,8 +41,10 @@ struct CoverUniforms {
     var shadeLow: Float = 0.25
     var wipeShadeGain: Float = 2.75
     var edgeBand: Float = 0.1
+    var edgeFadeWipe: Float = 0.1
     var hasSource: Int32 = 0
     var towardHinge: Int32 = 1
+    var keepHeight: Int32 = 1
 }
 
 /// Builds a blur pyramid from a source texture and composites the gradient blur + shading.
@@ -176,6 +178,8 @@ final class EffectRenderer {
         u.edgeBand = Float(params.coverEdgeBand)
         u.hasSource = hasSource ? 1 : 0
         u.towardHinge = params.coverTowardHinge ? 1 : 0
+        u.keepHeight = params.coverKeepHeight ? 1 : 0
+        u.edgeFadeWipe = Float(params.coverEdgeFadeWipe)
         return u
     }
 

@@ -45,6 +45,7 @@ struct EffectParams: Codable, Equatable {
         d("coverBlurEnd", &coverBlurEnd); d("coverLodScale", &coverLodScale); d("coverReferencePx", &coverReferencePx)
         d("coverShadeLow", &coverShadeLow); d("coverWipeShadeGain", &coverWipeShadeGain); d("coverEdgeBand", &coverEdgeBand)
         d("coverContentShift", &coverContentShift); d("coverTowardHinge", &coverTowardHinge)
+        d("coverKeepHeight", &coverKeepHeight); d("coverEdgeFadeWipe", &coverEdgeFadeWipe)
         d("lerpDrag", &lerpDrag); d("lerpSnap", &lerpSnap)
         d("openAngle", &openAngle); d("closedAngle", &closedAngle); d("angleCurve", &angleCurve)
     }
@@ -52,7 +53,7 @@ struct EffectParams: Codable, Equatable {
     var style: EffectStyle = .coverPanel
 
     // Cover-panel style (values follow the reference effect)
-    var coverTiltMax: Double = 90          // degrees of virtual tilt at full close (90 = edge-on)
+    var coverTiltMax: Double = 45          // degrees of virtual tilt at full close (90 = edge-on)
     var coverCameraDistance: Double = 3.44 // virtual camera distance in display heights
     var coverCameraHeightStart: Double = 0.5   // camera height above the hinge at rest (display heights)
     var coverCameraHeightEnd: Double = 0.28    // ... at full tilt
@@ -67,6 +68,8 @@ struct EffectParams: Codable, Equatable {
     var coverEdgeBand: Double = 0.1
     var coverContentShift: Double = 0.23
     var coverTowardHinge: Bool = false
+    var coverKeepHeight: Bool = true       // no vertical squash; only the trapezoid taper
+    var coverEdgeFadeWipe: Double = 0.1    // side bands fade in until this wipe value
 
     // Spatial gradient (t = 0 at the hinge, 1 at the outer edge of the lid)
     var direction: GradientDirection = .towardOuterEdge
@@ -122,7 +125,7 @@ struct EffectParams: Codable, Equatable {
 }
 
 extension EffectParams {
-    private static let defaultsKey = "EffectParams.v1"
+    private static let defaultsKey = "EffectParams.v2"
 
     static func load(from defaults: UserDefaults = .standard) -> EffectParams {
         guard let data = defaults.data(forKey: defaultsKey),

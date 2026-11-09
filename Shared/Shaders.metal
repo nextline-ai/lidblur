@@ -168,8 +168,10 @@ struct CoverUniforms {
     float shadeLow;
     float wipeShadeGain;
     float edgeBand;
+    float edgeFadeWipe;    // side bands reach full strength at this wipe
     int   hasSource;
-    int   towardHinge;     // 1: blur/shade grow toward the hinge (reference), 0: toward the outer edge
+    int   towardHinge;     // 1: blur/shade grow toward the hinge, 0: toward the outer edge (reference)
+    int   keepHeight;      // 1: no vertical foreshortening, only the trapezoid taper
 };
 
 fragment float4 cover_fs(VOut in [[stage_in]],
@@ -183,8 +185,13 @@ fragment float4 cover_fs(VOut in [[stage_in]],
     // receding: panel point (x, q) -> (x, q cos t, -q sin t).
     float A = u.aspect, D = u.camDist, hc = u.camHeight;
     float X = (in.uv.x - 0.5) * A;
-    float Ys = 1.0 - in.uv.y;
     float st = sin(u.tilt), ct = cos(u.tilt);
+    float Ys = 1.0 - in.uv.y;
+    if (u.keepHeight != 0) {
+        // Keep the full height: the outer edge stays on the display's top edge, only the taper remains.
+        float yTop = hc + (ct - hc) * D / (D + st);
+        Ys *= max(yTop, 1e-3);
+    }
     float num = hc * st + D * ct;
     float den = D * ct - (Ys - hc) * st;
     if (den <= 1e-6) return float4(0, 0, 0, 1);
@@ -196,8 +203,9 @@ fragment float4 cover_fs(VOut in [[stage_in]],
 
     // Anti-aliased panel coverage.
     float2 fw = max(fwidth(tuv), float2(1e-6));
-    float cov = smoothstep(0.0, fw.x, tuv.x) * smoothstep(0.0, fw.x, 1.0 - tuv.x)
-              * smoothstep(0.0, fw.y, tuv.y) * smoothstep(0.0, fw.y, 1.0 - tuv.y);
+    float2 hw = 0.5 * fw;   // centred on the boundary, so the flat panel is an exact identity
+    float cov = smoothstep(-hw.x, hw.x, tuv.x) * smoothstep(-hw.x, hw.x, 1.0 - tuv.x)
+              * smoothstep(-hw.y, hw.y, tuv.y) * smoothstep(-hw.y, hw.y, 1.0 - tuv.y);
     if (cov <= 0.0) return float4(0, 0, 0, 1);
 
     // Distance from the outer edge (0) to the hinge (1).
@@ -220,7 +228,8 @@ fragment float4 cover_fs(VOut in [[stage_in]],
 
     // Shading: blur-linked darkening, darkening toward the hinge, and the panel's side edges.
     float shade = mix(u.shadeLow, 1.0, smoothstep(1.3, 0.9, blurArea));
-    shade *= smoothstep(1.0, 1.0 - u.edgeBand, abs(tuv.x - 0.5) * 2.0);
+    float band = smoothstep(1.0, 1.0 - u.edgeBand, abs(tuv.x - 0.5) * 2.0);
+    shade *= mix(1.0, band, saturate(u.wipe / max(u.edgeFadeWipe, 1e-4)));   // fades in with the tilt
     shade *= 1.0 - saturate(u.wipe * u.wipeShadeGain) * smoothstep(0.0, 1.0, d);
     float edges = smoothstep(1.1, 1.0, suv.y) * smoothstep(-0.1, 0.0, suv.y);
     return float4(c.rgb * shade * edges * cov, 1.0);
