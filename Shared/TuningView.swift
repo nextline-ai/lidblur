@@ -15,10 +15,7 @@ struct TuningView: View {
                 .onChange(of: engine.inputMode) { _, _ in engine.persistMode() }
                 ParamSlider("디버그 진행도 (1 = 열림)", value: $engine.manualProgress, range: 0...1)
                     .disabled(engine.inputMode != .manual)
-                LabeledContent("현재 각도", value: engine.uiAngle.map { String(format: "%.0f°", $0) } ?? "—")
-                LabeledContent("현재 진행도", value: String(format: "%.3f", engine.uiProgress))
-                LabeledContent("센서", value: engine.sensorStatus)
-                LabeledContent("캡처", value: engine.captureStatus)
+                LiveStatusRows(status: engine.status)
                 Button("닫힘→열림 대체 애니메이션 미리보기") { engine.playOpenAnimation() }
                 EventLogToggle()
             }
@@ -89,6 +86,13 @@ struct TuningView: View {
                 ParamSlider("최소 밝기", value: $engine.params.minShading, range: 0...1)
             }
             }
+            Section("성능") {
+                Picker("최대 프레임 속도", selection: $engine.params.maxFrameRate) {
+                    Text("60 Hz (배터리 절약)").tag(60.0)
+                    Text("120 Hz (ProMotion)").tag(120.0)
+                }
+                .pickerStyle(.segmented)
+            }
             Section("스무딩") {
                 ParamSlider("lerp (입력 추종)", value: $engine.params.lerpDrag, range: 0.01...1, format: "%.3f")
                 ParamSlider("lerp (대체 애니메이션)", value: $engine.params.lerpSnap, range: 0.01...1, format: "%.3f")
@@ -136,5 +140,15 @@ struct EventLogToggle: View {
             Spacer()
             Button("로그 보기") { if let u = EventLog.shared.url { NSWorkspace.shared.activateFileViewerSelecting([u]) } }
         }
+    }
+}
+
+struct LiveStatusRows: View {
+    @ObservedObject var status: LiveStatus
+    var body: some View {
+        LabeledContent("현재 각도", value: status.angle.map { String(format: "%.0f°", $0) } ?? "—")
+        LabeledContent("현재 진행도", value: String(format: "%.3f", status.progress))
+        LabeledContent("센서", value: status.sensorStatus)
+        LabeledContent("캡처", value: status.captureStatus)
     }
 }

@@ -53,9 +53,11 @@ final class EffectRenderer {
     let queue: MTLCommandQueue
     private let effectPipeline: MTLRenderPipelineState
     private let coverPipeline: MTLRenderPipelineState
-    private let copyPipeline: MTLComputePipelineState
     private let tentPipeline: MTLComputePipelineState
     private let boxPipeline: MTLComputePipelineState
+    /// Level 0 is the source itself (sampled straight from the captured IOSurface, no copy);
+    /// `pyramid` holds levels 1...N (its mip k is overall level k + 1) in half float.
+    private(set) var source: MTLTexture?
     private(set) var pyramid: MTLTexture?
     private var levelViews: [MTLTexture] = []
     private(set) var hasSource = false
@@ -81,14 +83,14 @@ final class EffectRenderer {
         effectPipeline = try device.makeRenderPipelineState(descriptor: desc)
         desc.fragmentFunction = library.makeFunction(name: "cover_fs")
         coverPipeline = try device.makeRenderPipelineState(descriptor: desc)
-        copyPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "copy_to_level0")!)
         tentPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "downsample_tent")!)
         boxPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "downsample_box")!)
     }
 
     enum RendererError: Error { case noDevice, textureFailure }
 
-    private func ensurePyramid(width: Int, height: Int) {
+    private func ensurePyramid(sourceWidth: Int, sourceHeight: Int) {
+        let width = max(1, sourceWidth / 2), height = max(1, sourceHeight / 2)
         if let p = pyramid, p.width == width, p.height == height { return }
         let levels = Int(floor(log2(Double(max(width, height))))) + 1
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: width, height: height, mipmapped: true)
@@ -99,30 +101,29 @@ final class EffectRenderer {
         levelViews = (0..<levels).map { pyramid!.makeTextureView(pixelFormat: .rgba16Float, textureType: .type2D, levels: $0..<($0 + 1), slices: 0..<1)! }
     }
 
-    /// Rebuilds the pyramid from a new source frame.
-    func encodePyramid(from source: MTLTexture, filter: BlurFilter, into cb: MTLCommandBuffer) {
-        ensurePyramid(width: source.width, height: source.height)
+    /// Rebuilds the blur levels for a new source frame. The source must stay alive until the
+    /// command buffers that sample it have completed (callers keep the capture buffer referenced).
+    func encodePyramid(from src: MTLTexture, filter: BlurFilter, into cb: MTLCommandBuffer) {
+        ensurePyramid(sourceWidth: src.width, sourceHeight: src.height)
         guard let enc = cb.makeComputeCommandEncoder() else { return }
-        func dispatch(_ pso: MTLComputePipelineState, _ w: Int, _ h: Int) {
-            let tg = MTLSize(width: 16, height: 16, depth: 1)
-            enc.dispatchThreads(MTLSize(width: w, height: h, depth: 1), threadsPerThreadgroup: tg)
-        }
-        enc.setComputePipelineState(copyPipeline)
-        enc.setTexture(source, index: 0)
-        enc.setTexture(levelViews[0], index: 1)
-        dispatch(copyPipeline, levelViews[0].width, levelViews[0].height)
         let pso = filter == .smooth ? tentPipeline : boxPipeline   // .reference and .mipmap use box mipmaps
         enc.setComputePipelineState(pso)
-        for i in 1..<levelViews.count {
-            enc.setTexture(levelViews[i - 1], index: 0)
-            enc.setTexture(levelViews[i], index: 1)
-            dispatch(pso, levelViews[i].width, levelViews[i].height)
+        let tg = MTLSize(width: 16, height: 16, depth: 1)
+        var prev: MTLTexture = src
+        for v in levelViews {
+            enc.setTexture(prev, index: 0)
+            enc.setTexture(v, index: 1)
+            enc.dispatchThreads(MTLSize(width: v.width, height: v.height, depth: 1), threadsPerThreadgroup: tg)
+            prev = v
         }
         enc.endEncoding()
+        source = src
         hasSource = true
     }
 
-    func invalidateSource() { hasSource = false }
+    private var maxLevelValue: Float { Float(pyramid?.mipmapLevelCount ?? 0) }
+
+    func invalidateSource() { hasSource = false; source = nil }
 
     /// Fold progress p: 1 = open (no effect), 0 = closed.
     func uniforms(params: EffectParams, progress p: Double) -> EffectUniforms {
@@ -136,9 +137,9 @@ final class EffectRenderer {
         u.blurCurve = Float(params.blurCurve)
         u.hingeBlur = Float(params.hingeBlur)
         var maxLod = params.maxBlur
-        if params.scaleToPanel, let pyr = pyramid, params.maxBlur > 0 {
+        if params.scaleToPanel, let src = source, params.maxBlur > 0 {
             // The fold-perpendicular axis of a MacBook display is its height.
-            let offset = log2(Double(pyr.height) / EffectParams.referencePanelTexels)
+            let offset = log2(Double(src.height) / EffectParams.referencePanelTexels)
             maxLod = params.maxBlur + offset
         }
         u.maxLod = Float(maxLod)
@@ -147,7 +148,7 @@ final class EffectRenderer {
         u.sideShade = Float(params.sideShade)
         u.sideWidth = Float(params.sideWidth)
         u.minShading = Float(params.minShading)
-        u.maxLevel = Float((pyramid?.mipmapLevelCount ?? 1) - 1)
+        u.maxLevel = maxLevelValue
         u.direction = params.direction == .towardOuterEdge ? 0 : 1
         u.filterMode = params.filter == .mipmap ? 1 : 0
         u.hasSource = hasSource ? 1 : 0
@@ -162,10 +163,10 @@ final class EffectRenderer {
         u.camDist = Float(params.coverCameraDistance)
         let f = tiltDeg / 90
         u.camHeight = Float(params.coverCameraHeightStart + (params.coverCameraHeightEnd - params.coverCameraHeightStart) * f)
-        if let pyr = pyramid {
-            u.aspect = Float(Double(pyr.width) / Double(pyr.height))
-            u.lodOffset = Float(log2(Double(pyr.height) / max(1, params.coverReferencePx)))
-            u.maxLevel = Float(pyr.mipmapLevelCount - 1)
+        if let src = source {
+            u.aspect = Float(Double(src.width) / Double(src.height))
+            u.lodOffset = Float(log2(Double(src.height) / max(1, params.coverReferencePx)))
+            u.maxLevel = maxLevelValue
         }
         u.wipe = Float(params.coverWipeAtFullTilt * tiltDeg / 90)
         u.contentShift = Float(params.coverContentShift)
@@ -188,7 +189,7 @@ final class EffectRenderer {
         if params.style == .coverPanel {
             var u = coverUniforms(params: params, progress: progress)
             enc.setRenderPipelineState(coverPipeline)
-            if let pyr = pyramid { enc.setFragmentTexture(pyr, index: 0) } else { u.hasSource = 0 }
+            if let src = source, let pyr = pyramid { enc.setFragmentTexture(src, index: 0); enc.setFragmentTexture(pyr, index: 1) } else { u.hasSource = 0 }
             enc.setFragmentBytes(&u, length: MemoryLayout<CoverUniforms>.stride, index: 0)
             enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             enc.endEncoding()
@@ -196,7 +197,7 @@ final class EffectRenderer {
         }
         var u = uniforms(params: params, progress: progress)
         enc.setRenderPipelineState(effectPipeline)
-        if let pyr = pyramid { enc.setFragmentTexture(pyr, index: 0) } else { u.hasSource = 0 }
+        if let src = source, let pyr = pyramid { enc.setFragmentTexture(src, index: 0); enc.setFragmentTexture(pyr, index: 1) } else { u.hasSource = 0 }
         enc.setFragmentBytes(&u, length: MemoryLayout<EffectUniforms>.stride, index: 0)
         enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         enc.endEncoding()

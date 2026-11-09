@@ -30,11 +30,12 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     @Published var fallbackOnWake: Bool = UserDefaults.standard.object(forKey: "fallbackOnWake") as? Bool ?? true {
         didSet { UserDefaults.standard.set(fallbackOnWake, forKey: "fallbackOnWake") }
     }
-    @Published private(set) var uiAngle: Double?
-    @Published private(set) var uiProgress: Double = 1
-    @Published private(set) var sensorStatus: String = ""
-    @Published private(set) var captureStatus: String = "대기"
-    @Published private(set) var overlayVisible = false
+    /// Debug: simulated lid angle (not published, so it costs what the real sensor path costs).
+    var debugAngle: Double?
+
+    /// Fast-changing state lives in its own object so big views (tuning panel, app scene) do not
+    /// re-render on every progress tick.
+    let status = LiveStatus()
     @Published private(set) var screenPermission = CGPreflightScreenCaptureAccess()
     @Published private(set) var builtInPresent = Displays.builtInScreen != nil
 
@@ -63,6 +64,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private var captureGeneration = 0
     private var captureStartAt: CFTimeInterval = 0
     private var observers: [NSObjectProtocol] = []
+    private var lastDrawnProgress: Double = -1
+    private var lastDrawnParams: EffectParams?
+    private var sourceHolder: AnyObject?      // keeps the captured surface (level 0) alive
 
     /// Degrees above `openAngle` at which capture is pre-started so the first frame is ready.
     private let prewarmDegrees = 20.0
@@ -74,17 +78,27 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         super.init()
         renderer = try? EffectRenderer()
         if let r = renderer { textureCache = PixelBufferTextureCache(device: r.device) }
-        sensorStatus = sensor.statusText
+        status.sensorStatus = sensor.statusText
         NSLog("LidBlur: sensor %@ angle %@", sensor.statusText, sensor.angle.map { String($0) } ?? "nil")
         capturer.onError = { [weak self] err in
-            Task { @MainActor in self?.captureStatus = "캡처 중단: \(err.localizedDescription)" }
+            Task { @MainActor in self?.status.captureStatus = "캡처 중단: \(err.localizedDescription)" }
         }
         installObservers()
+        #if DEBUG
+        DebugHooks.current = self
+        #endif
         if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
-        sensor.setPollingRate(sensor.isAvailable ? 10 : 0)
-        idleTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.idleTick() }
+        // Idle is event driven: the sensor wakes us only when the angle changes.
+        sensor.onChange = { [weak self] _ in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.sensorChanged() } }
         }
+        sensor.setPollingRate(sensor.isAvailable ? 5 : 0)
+        let t = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.idleTick() }
+        }
+        t.tolerance = 1
+        RunLoop.main.add(t, forMode: .common)
+        idleTimer = t
         evaluate()
     }
 
@@ -97,7 +111,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         switch inputMode {
         case .manual: return manualProgress
         case .sensor:
-            if let a = sensor.smoothAngle() { return params.progress(forAngle: a) }
+            if let a = debugAngle ?? sensor.smoothAngle() { return params.progress(forAngle: a) }
             return 1
         }
     }
@@ -117,14 +131,21 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     // MARK: State machine
 
     private func idleTick() {
-        screenPermission = CGPreflightScreenCaptureAccess()
+        let perm = CGPreflightScreenCaptureAccess()
+        if perm != screenPermission { screenPermission = perm }
         if displayLink == nil { evaluate(); updateUI(force: false) }
+    }
+
+    private func sensorChanged() {
+        guard displayLink == nil else { return }   // while active the display link polls every frame
+        evaluate()
+        updateUI(force: false)
     }
 
     func evaluate() {
         let t = target
         let near: Bool = {
-            guard enabled, builtInPresent, inputMode == .sensor, let a = sensor.angle else { return false }
+            guard enabled, builtInPresent, inputMode == .sensor, let a = debugAngle ?? sensor.angle else { return false }
             return a < params.openAngle + prewarmDegrees
         }()
         let needsEffect = t < 1 - eps || smoothed < 1 - eps
@@ -137,7 +158,18 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             if now - (farSince ?? now) > 3 { stopCapture() }
         }
         if needsEffect { activate() }
-        sensor.setPollingRate(sensor.isAvailable ? ((near || needsEffect) ? 30 : 10) : 0)
+        sensor.setPollingRate(sensor.isAvailable ? ((near || needsEffect) ? 20 : 5) : 0)
+        // While closing (capture/near), keep the app from being napped so timers stay on time.
+        setLatencyCritical(near || needsEffect)
+    }
+
+    private var activity: NSObjectProtocol?
+    private func setLatencyCritical(_ on: Bool) {
+        if on, activity == nil {
+            activity = ProcessInfo.processInfo.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical], reason: "Lid fold effect")
+        } else if !on, let a = activity {
+            ProcessInfo.processInfo.endActivity(a); activity = nil
+        }
     }
 
     private func activate() {
@@ -146,6 +178,8 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         if let w = window, !w.isVisible { w.alphaValue = 0; w.orderFrontRegardless() }
         if displayLink == nil, let screen = Displays.builtInScreen {
             let link = screen.displayLink(target: self, selector: #selector(displayTick(_:)))
+            let fps = Float(params.maxFrameRate)
+            link.preferredFrameRateRange = CAFrameRateRange(minimum: min(30, fps), maximum: fps, preferred: fps)
             link.add(to: .main, forMode: .common)
             displayLink = link
             lastTick = CACurrentMediaTime()
@@ -158,7 +192,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         displayLink = nil
         window?.alphaValue = 0
         window?.orderOut(nil)
-        overlayVisible = false
+        status.overlayVisible = false
         settledSince = nil
         updateUI(force: true)
     }
@@ -172,7 +206,13 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         smoothed = frameLerp(smoothed, t, factor60: factor, dt: dt)
         if abs(smoothed - t) < eps { smoothed = t }
 
-        mtkView?.draw()
+        // Draw only when something visible changed (new captured frame, progress, parameters).
+        let seq = capturer.latestSequence
+        if seq != lastSeq || abs(smoothed - lastDrawnProgress) > 1e-6 || params != lastDrawnParams || forcePyramid || window?.alphaValue == 0 {
+            mtkView?.draw()
+            lastDrawnProgress = smoothed
+            lastDrawnParams = params
+        }
 
         // Show the overlay only once it can show real content (or when it is nearly black anyway).
         if let w = window {
@@ -181,10 +221,10 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             if shouldShow && w.alphaValue < 1 {
                 w.orderFrontRegardless()
                 w.alphaValue = 1
-                overlayVisible = true
+                status.overlayVisible = true
             } else if !shouldShow && w.alphaValue > 0 && smoothed >= 1 - eps {
                 w.alphaValue = 0
-                overlayVisible = false
+                status.overlayVisible = false
             }
         }
 
@@ -202,9 +242,10 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         let now = CACurrentMediaTime()
         guard force || now - lastUIUpdate > 1.0 / 15.0 else { return }
         lastUIUpdate = now
-        uiAngle = sensor.angle
-        uiProgress = smoothed
-        sensorStatus = sensor.statusText
+        let a = sensor.angle
+        if a != status.angle { status.angle = a }
+        if abs(status.progress - smoothed) > 0.001 || (force && status.progress != smoothed) { status.progress = smoothed }
+        if status.sensorStatus != sensor.statusText { status.sensorStatus = sensor.statusText }
     }
 
     // MARK: Capture
@@ -217,12 +258,12 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             startToken = nil
         }
         guard !systemAsleep, !screenLocked, !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
-        guard CGPreflightScreenCaptureAccess() else { captureStatus = "화면 기록 권한 필요"; return }
+        guard CGPreflightScreenCaptureAccess() else { status.captureStatus = "화면 기록 권한 필요"; return }
         nextStartToken += 1
         let token = nextStartToken
         startToken = token
         captureStartAt = CACurrentMediaTime()
-        captureStatus = "캡처 시작 중"
+        status.captureStatus = "캡처 시작 중"
         let (w, h) = screen.pixelSize
         let gen = captureGeneration
         Task {
@@ -234,9 +275,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
                     return
                 }
                 EventLog.shared.log("captureStarted", sensor.angle)
-                captureStatus = "캡처 중 (\(w)×\(h))"
+                status.captureStatus = "캡처 중 (\(w)×\(h))"
             } catch {
-                captureStatus = "캡처 실패: \(error.localizedDescription)"
+                status.captureStatus = "캡처 실패: \(error.localizedDescription)"
             }
             if startToken == token { startToken = nil }
         }
@@ -245,7 +286,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private func stopCapture() {
         captureGeneration += 1
         Task { await capturer.stop() }
-        captureStatus = "대기"
+        status.captureStatus = "대기"
         farSince = nil
     }
 
@@ -254,6 +295,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         stopCapture()
         renderer?.invalidateSource()
         lastSeq = 0
+        sourceHolder = nil
     }
 
     // MARK: Overlay window
@@ -309,7 +351,11 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             renderer.encodePyramid(from: tex, filter: params.effectiveFilter, into: cb)
             lastSeq = seq
             forcePyramid = false
-            cb.addCompletedHandler { _ in _ = cvTex }
+            // The captured surface is level 0 now: keep it alive until it is replaced, and keep the
+            // previous one alive until the GPU has finished with it.
+            let previous = sourceHolder
+            sourceHolder = [pb, cvTex] as NSArray
+            cb.addCompletedHandler { _ in _ = previous }
         }
         pass.colorAttachments[0].loadAction = .dontCare
         renderer.encodeEffect(params: params, progress: smoothed, pass: pass, into: cb)
@@ -321,7 +367,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
 
     /// Renders what the overlay currently shows into a PNG and returns a status line (testing aid).
     func debugSnapshot(to path: String) -> String {
-        var status = "progress=\(smoothed) target=\(target) overlayVisible=\(overlayVisible) alpha=\(window?.alphaValue ?? -1) capture=\(captureStatus) hasSource=\(renderer?.hasSource ?? false) angle=\(sensor.angle.map { String($0) } ?? "nil")"
+        var status = "progress=\(smoothed) target=\(target) overlayVisible=\(status.overlayVisible) alpha=\(window?.alphaValue ?? -1) capture=\(status.captureStatus) hasSource=\(renderer?.hasSource ?? false) angle=\(sensor.angle.map { String($0) } ?? "nil")"
         guard let renderer, let pyr = renderer.pyramid else { return status + " (no pyramid)" }
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: pyr.width, height: pyr.height, mipmapped: false)
         d.usage = [.renderTarget, .shaderRead]; d.storageMode = .shared
@@ -396,7 +442,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         restartCapture()
         EventLog.shared.log("didWake", sensor.readOnce(), Clamshell.isClosed ? 1 : 0)
         if !sensor.isAvailable { _ = sensor.openDevice() }
-        sensorStatus = sensor.statusText
+        status.sensorStatus = sensor.statusText
         if inputMode == .sensor, sensor.isAvailable, let a = sensor.readOnce() {
             sensor.resetSmoothing()
             // Start from the current lid position instead of easing from a stale value.
@@ -422,6 +468,15 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         }
         evaluate()
     }
+}
+
+@MainActor
+final class LiveStatus: ObservableObject {
+    @Published var angle: Double?
+    @Published var progress: Double = 1
+    @Published var sensorStatus: String = ""
+    @Published var captureStatus: String = "대기"
+    @Published var overlayVisible = false
 }
 
 /// A window that never takes focus.

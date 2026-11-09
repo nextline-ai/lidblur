@@ -46,6 +46,7 @@ struct EffectParams: Codable, Equatable {
         d("coverShadeLow", &coverShadeLow); d("coverWipeShadeGain", &coverWipeShadeGain); d("coverEdgeBand", &coverEdgeBand)
         d("coverContentShift", &coverContentShift); d("coverTowardHinge", &coverTowardHinge)
         d("coverKeepHeight", &coverKeepHeight); d("coverEdgeFadeWipe", &coverEdgeFadeWipe)
+        d("maxFrameRate", &maxFrameRate)
         d("lerpDrag", &lerpDrag); d("lerpSnap", &lerpSnap)
         d("openAngle", &openAngle); d("closedAngle", &closedAngle); d("angleCurve", &angleCurve)
     }
@@ -105,6 +106,9 @@ struct EffectParams: Codable, Equatable {
     // Smoothing (per-frame lerp factors at 60 Hz, corrected for the actual frame time)
     var lerpDrag: Double = 0.2            // following a live input (lid angle, slider)
     var lerpSnap: Double = 0.095          // fallback animations
+
+    // Performance
+    var maxFrameRate: Double = 60          // 60 saves battery; 120 for ProMotion smoothness
 
     // Lid angle -> progress mapping
     var openAngle: Double = 95            // at or above this the effect is off (p = 1)

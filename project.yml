@@ -10,7 +10,11 @@ settings:
     DEVELOPMENT_TEAM: 6HV24C77H5
     MACOSX_DEPLOYMENT_TARGET: "15.0"
     ENABLE_HARDENED_RUNTIME: YES
-    CODE_SIGN_STYLE: Automatic
+    # Fixed signing identity so macOS privacy permissions (Screen Recording) survive rebuilds.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Developer ID Application: daeummoyang (6HV24C77H5)"
+    PROVISIONING_PROFILE_SPECIFIER: ""
+    OTHER_CODE_SIGN_FLAGS: "--timestamp=none"
 targets:
   LidBlur:
     type: application

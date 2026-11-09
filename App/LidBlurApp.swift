@@ -6,11 +6,21 @@ import ServiceManagement
 struct LidBlurApp: App {
     @StateObject private var engine = EffectEngine(defaultMode: .sensor)
 
+    init() {
+        #if DEBUG
+        // Install the automation hook even if the menu is never opened.
+        DispatchQueue.main.async { DebugHooks.installLazily() }
+        #endif
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuContent(engine: engine)
+                #if DEBUG
+                .onAppear { DebugHooks.install(engine: engine) }
+                #endif
         } label: {
-            Image(systemName: engine.overlayVisible ? "laptopcomputer.and.arrow.down" : "laptopcomputer")
+            MenuIcon(status: engine.status)
         }
         .menuBarExtraStyle(.window)
 
@@ -38,11 +48,7 @@ struct MenuContent: View {
             if !engine.screenPermission { PermissionBanner(engine: engine) }
             Toggle("효과 켜기", isOn: $engine.enabled)
             Group {
-                if engine.sensor.isAvailable {
-                    Text(String(format: "덮개 각도 %@ · 진행도 %.2f", engine.uiAngle.map { String(format: "%.0f°", $0) } ?? "—", engine.uiProgress))
-                } else {
-                    Text("덮개 각도 센서를 찾지 못했습니다 (\(engine.sensorStatus)). 덮개를 열 때 시간 기반 애니메이션으로 대신합니다.")
-                }
+                MenuStatusText(engine: engine, status: engine.status)
             }
             .font(.callout).foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -61,5 +67,22 @@ struct MenuContent: View {
         }
         .padding(14)
         .frame(width: 340)
+    }
+}
+
+struct MenuIcon: View {
+    @ObservedObject var status: LiveStatus
+    var body: some View { Image(systemName: status.overlayVisible ? "laptopcomputer.and.arrow.down" : "laptopcomputer") }
+}
+
+struct MenuStatusText: View {
+    let engine: EffectEngine
+    @ObservedObject var status: LiveStatus
+    var body: some View {
+        if engine.sensor.isAvailable {
+            Text(String(format: "덮개 각도 %@ · 진행도 %.2f", status.angle.map { String(format: "%.0f°", $0) } ?? "—", status.progress))
+        } else {
+            Text("덮개 각도 센서를 찾지 못했습니다 (\(status.sensorStatus)). 덮개를 열 때 시간 기반 애니메이션으로 대신합니다.")
+        }
     }
 }

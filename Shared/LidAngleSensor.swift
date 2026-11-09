@@ -15,6 +15,8 @@ final class LidAngleSensor {
     private let queue = DispatchQueue(label: "studio.xtower.lidblur.sensor", qos: .userInteractive)
     private(set) var statusText: String = "초기화 전"
     private var currentHz: Double = 0
+    /// Called on the sensor queue whenever the raw angle changes.
+    var onChange: ((Double) -> Void)?
 
     init() {
         manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
@@ -110,13 +112,15 @@ final class LidAngleSensor {
         guard hz > 0 else { return }
         let t = DispatchSource.makeTimerSource(queue: queue)
         let interval = 1.0 / hz
-        t.schedule(deadline: .now(), repeating: interval, leeway: .milliseconds(Int(interval * 200)))
+        // Generous leeway when slow so the system can coalesce wake-ups.
+        t.schedule(deadline: .now(), repeating: interval, leeway: .milliseconds(Int(interval * (hz <= 5 ? 400 : 100))))
         var failures = 0
         t.setEventHandler { [weak self] in
             guard let self else { return }
             if let a = self.readOnce() {
                 failures = 0
                 let now = CACurrentMediaTime()
+                let changed = self.lock.withLock { a != self._angle }
                 self.lock.withLock {
                     if a != self._angle {
                         self.pushSample(a, at: now)
@@ -124,6 +128,7 @@ final class LidAngleSensor {
                     }
                     self._angle = a; self._timestamp = now
                 }
+                if changed { self.onChange?(a) }
             } else {
                 failures += 1
                 if failures == 1 { EventLog.shared.log("sensorReadFailed") }

@@ -19,15 +19,6 @@ vertex VOut fullscreen_vs(uint vid [[vertex_id]]) {
     return o;
 }
 
-// Copy the captured frame (8-bit BGRA) into level 0 of the half-float pyramid.
-kernel void copy_to_level0(texture2d<float, access::read>  src [[texture(0)]],
-                           texture2d<float, access::write> dst [[texture(1)]],
-                           uint2 gid [[thread_position_in_grid]]) {
-    if (gid.x >= dst.get_width() || gid.y >= dst.get_height()) return;
-    uint2 s = uint2(float2(gid) * float2(src.get_width(), src.get_height()) / float2(dst.get_width(), dst.get_height()));
-    dst.write(src.read(s), gid);
-}
-
 // 2x downsample with a separable [1 3 3 1] tent kernel (4 bilinear taps at +-0.75 texel).
 // Produces a gaussian-like pyramid that stays smooth when magnified.
 kernel void downsample_tent(texture2d<float, access::sample> src [[texture(0)]],
@@ -76,13 +67,13 @@ struct EffectUniforms {
     int   hasSource;       // 0 => render black (no captured frame yet)
 };
 
-// Bilinear sample of one pyramid level.
-static float4 sample_level_linear(texture2d<float> t, float2 uv, float lvl) {
+// Bilinear sample of one texture level.
+static float4 sample_bilinear(texture2d<float> t, float2 uv, uint lvl) {
     constexpr sampler s(filter::linear, mip_filter::nearest, address::clamp_to_edge);
-    return t.sample(s, uv, level(lvl));
+    return t.sample(s, uv, level(float(lvl)));
 }
 
-// Cubic B-spline sample of one pyramid level using 4 bilinear taps.
+// Cubic B-spline sample of one texture level using 4 bilinear taps.
 static float4 sample_level_bspline(texture2d<float> t, float2 uv, uint lvl) {
     constexpr sampler s(filter::linear, mip_filter::nearest, address::clamp_to_edge);
     float2 size = float2(max(1u, t.get_width() >> lvl), max(1u, t.get_height() >> lvl));
@@ -106,23 +97,26 @@ static float4 sample_level_bspline(texture2d<float> t, float2 uv, uint lvl) {
     return g0.y * (g0.x * a + g1.x * b) + g1.y * (g0.x * c + g1.x * d);
 }
 
-static float4 sample_lod(texture2d<float> t, float2 uv, float lod, float maxLevel, int mode) {
+// Overall level k: 0 = the source itself, k >= 1 = pyramid mip k - 1.
+static float4 sample_level(texture2d<float> src, texture2d<float> pyr, float2 uv, uint k, int mode) {
+    if (k == 0) return sample_bilinear(src, uv, 0);
+    return mode == 1 ? sample_bilinear(pyr, uv, k - 1) : sample_level_bspline(pyr, uv, k - 1);
+}
+
+static float4 sample_lod(texture2d<float> src, texture2d<float> pyr, float2 uv, float lod, float maxLevel, int mode) {
     lod = clamp(lod, 0.0, maxLevel);
-    if (mode == 1) {
-        constexpr sampler tri(filter::linear, mip_filter::linear, address::clamp_to_edge);
-        return t.sample(tri, uv, level(lod));
-    }
     float l0 = floor(lod);
     float fr = lod - l0;
     uint i0 = uint(l0);
-    float4 a = (i0 == 0) ? sample_level_linear(t, uv, 0.0) : sample_level_bspline(t, uv, i0);
+    float4 a = sample_level(src, pyr, uv, i0, mode);
     if (fr < 1e-4) return a;
-    float4 b = sample_level_bspline(t, uv, min(i0 + 1, uint(maxLevel)));
+    float4 b = sample_level(src, pyr, uv, min(i0 + 1, uint(maxLevel)), mode);
     return mix(a, b, fr);
 }
 
 fragment float4 effect_fs(VOut in [[stage_in]],
-                          texture2d<float> pyramid [[texture(0)]],
+                          texture2d<float> source [[texture(0)]],
+                          texture2d<float> pyramid [[texture(1)]],
                           constant EffectUniforms& u [[buffer(0)]]) {
     if (u.hasSource == 0) return float4(0, 0, 0, 1);
 
@@ -135,7 +129,7 @@ fragment float4 effect_fs(VOut in [[stage_in]],
     float ramp = pow(n, max(u.blurCurve, 0.01));
 
     float lod = u.blurAmount * u.maxLod * (u.hingeBlur + (1.0 - u.hingeBlur) * ramp);
-    float4 c = sample_lod(pyramid, in.uv, lod, u.maxLevel, u.filterMode);
+    float4 c = sample_lod(source, pyramid, in.uv, lod, u.maxLevel, u.filterMode);
 
     float st = saturate((t - u.shadeStart) / max(1.0 - u.shadeStart, 1e-4));
     float edge = pow(st, max(u.shadeCurve, 0.01));
@@ -175,7 +169,8 @@ struct CoverUniforms {
 };
 
 fragment float4 cover_fs(VOut in [[stage_in]],
-                         texture2d<float> pyramid [[texture(0)]],
+                         texture2d<float> source [[texture(0)]],
+                         texture2d<float> pyramid [[texture(1)]],
                          constant CoverUniforms& u [[buffer(0)]]) {
     if (u.hasSource == 0) return float4(0, 0, 0, 1);
 
@@ -220,11 +215,11 @@ fragment float4 cover_fs(VOut in [[stage_in]],
     float2 suv = tuv + float2(0.0, shiftDir * u.contentShift * u.wipe);
 
     // Perspective minification so the foreshortened panel does not alias.
-    float2 size = float2(pyramid.get_width(), pyramid.get_height());
+    float2 size = float2(source.get_width(), source.get_height());
     float2 dx = dfdx(suv * size), dy = dfdy(suv * size);
     float lodPersp = 0.5 * log2(max(max(dot(dx, dx), dot(dy, dy)), 1e-8));
     float lod = max(lodBlur, lodPersp);
-    float4 c = sample_lod(pyramid, saturate(suv), lod, u.maxLevel, 0);
+    float4 c = sample_lod(source, pyramid, saturate(suv), lod, u.maxLevel, 0);
 
     // Shading: blur-linked darkening, darkening toward the hinge, and the panel's side edges.
     float shade = mix(u.shadeLow, 1.0, smoothstep(1.3, 0.9, blurArea));

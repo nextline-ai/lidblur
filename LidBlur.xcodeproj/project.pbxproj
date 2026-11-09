@@ -12,6 +12,7 @@
 		0A549DE3A52342BE6226ABE7 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192B87394AB5E234B5C0A2D /* CompareView.swift */; };
 		0A9F56F4D241D66C657DFB78 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
 		1BD31C90E27A4CA19D149037 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 550EE743F9AA062BB5923006 /* Shaders.metal */; };
+		2E5C5E1FE1B7D56A4B95DDD2 /* DebugHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */; };
 		351DC96867A847DD3E2139C4 /* EventLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E345F1424A688875637E4D /* EventLog.swift */; };
 		358F43D6B139FE8F9BB7D87C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF91426142539C1E48D472F /* main.swift */; };
 		373A68E933B2A82DF5056CB3 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
@@ -25,6 +26,7 @@
 		A657D20DE6E37ACE489B584C /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF3DD4302D85B86627CE1F8 /* Renderer.swift */; };
 		AC2469009D6CEDC91C06297D /* TuningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044A90AB82087F718528433B /* TuningView.swift */; };
 		B78E228B81EE32AC974B5BC3 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF3DD4302D85B86627CE1F8 /* Renderer.swift */; };
+		BBD9DD9DAC2B7DCF97044FD6 /* DebugHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */; };
 		C06410E40DFC36C0309B99A5 /* ScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */; };
 		D2B6801D8AA65DDC2280A86D /* LidBlurApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D086D42A1D203B45AEF64163 /* LidBlurApp.swift */; };
 		D38139561BF2CA752AEF5965 /* EffectEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16FDF926632774AA344A5A5 /* EffectEngine.swift */; };
@@ -54,6 +56,7 @@
 		DDF3DD4302D85B86627CE1F8 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		ECFB33514A5C398BF77E7E54 /* BlurLabApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurLabApp.swift; sourceTree = "<group>"; };
 		F192B87394AB5E234B5C0A2D /* CompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareView.swift; sourceTree = "<group>"; };
+		FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugHooks.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -79,6 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				F192B87394AB5E234B5C0A2D /* CompareView.swift */,
+				FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */,
 				B16FDF926632774AA344A5A5 /* EffectEngine.swift */,
 				0CF29C10F31372B8BD510F71 /* EffectParams.swift */,
 				61E345F1424A688875637E4D /* EventLog.swift */,
@@ -186,11 +190,11 @@
 				TargetAttributes = {
 					3ABAECE41E94412B8360F9A4 = {
 						DevelopmentTeam = 6HV24C77H5;
-						ProvisioningStyle = Automatic;
+						ProvisioningStyle = Manual;
 					};
 					B09337572B9720E9CDF73AB1 = {
 						DevelopmentTeam = 6HV24C77H5;
-						ProvisioningStyle = Automatic;
+						ProvisioningStyle = Manual;
 					};
 					C4C4206B8CBBD772C21EC03E = {
 						DevelopmentTeam = "";
@@ -226,6 +230,7 @@
 			files = (
 				D80A985CD6F30AA7B4433B83 /* BlurLabApp.swift in Sources */,
 				D9C31F09BB48F9859C7BA121 /* CompareView.swift in Sources */,
+				2E5C5E1FE1B7D56A4B95DDD2 /* DebugHooks.swift in Sources */,
 				D38139561BF2CA752AEF5965 /* EffectEngine.swift in Sources */,
 				8E529EA7C5D042AC975D4A73 /* EffectParams.swift in Sources */,
 				9B68C481EDE20819F21A58EF /* EventLog.swift in Sources */,
@@ -243,6 +248,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A549DE3A52342BE6226ABE7 /* CompareView.swift in Sources */,
+				BBD9DD9DAC2B7DCF97044FD6 /* DebugHooks.swift in Sources */,
 				089285CCA13B5B1D9547A249 /* EffectEngine.swift in Sources */,
 				0A9F56F4D241D66C657DFB78 /* EffectParams.swift in Sources */,
 				351DC96867A847DD3E2139C4 /* EventLog.swift in Sources */,
@@ -303,7 +309,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Developer ID Application: daeummoyang (6HV24C77H5)";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6HV24C77H5;
@@ -328,7 +335,9 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp=none";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -389,7 +398,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Developer ID Application: daeummoyang (6HV24C77H5)";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6HV24C77H5;
@@ -407,7 +417,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp=none";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";

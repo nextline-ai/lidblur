@@ -22,7 +22,9 @@ final class ScreenCapturer: NSObject, SCStreamOutput, SCStreamDelegate {
         }
     }
 
-    func start(displayID: CGDirectDisplayID, pixelWidth: Int, pixelHeight: Int, fps: Int = 120) async throws {
+    var latestSequence: UInt64 { lock.withLock { latest == nil ? 0 : sequence } }
+
+    func start(displayID: CGDirectDisplayID, pixelWidth: Int, pixelHeight: Int, fps: Int = 60) async throws {
         if isRunning { return }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
