@@ -20,7 +20,7 @@ struct LidBlurApp: App {
                 .onAppear { DebugHooks.install(engine: engine) }
                 #endif
         } label: {
-            MenuIcon(status: engine.status)
+            MenuIcon(state: engine.iconState)
         }
         .menuBarExtraStyle(.window)
 
@@ -71,8 +71,8 @@ struct MenuContent: View {
 }
 
 struct MenuIcon: View {
-    @ObservedObject var status: LiveStatus
-    var body: some View { Image(systemName: status.overlayVisible ? "laptopcomputer.and.arrow.down" : "laptopcomputer") }
+    @ObservedObject var state: IconState
+    var body: some View { Image(systemName: state.active ? "laptopcomputer.and.arrow.down" : "laptopcomputer") }
 }
 
 struct MenuStatusText: View {

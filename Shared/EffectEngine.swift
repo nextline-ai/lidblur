@@ -36,6 +36,8 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     /// Fast-changing state lives in its own object so big views (tuning panel, app scene) do not
     /// re-render on every progress tick.
     let status = LiveStatus()
+    /// Only the overlay visibility, for the menu bar icon (re-rendering a status item is costly).
+    let iconState = IconState()
     @Published private(set) var screenPermission = CGPreflightScreenCaptureAccess()
     @Published private(set) var builtInPresent = Displays.builtInScreen != nil
 
@@ -192,7 +194,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         displayLink = nil
         window?.alphaValue = 0
         window?.orderOut(nil)
-        status.overlayVisible = false
+        status.overlayVisible = false; if iconState.active { iconState.active = false }
         settledSince = nil
         updateUI(force: true)
     }
@@ -221,10 +223,10 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             if shouldShow && w.alphaValue < 1 {
                 w.orderFrontRegardless()
                 w.alphaValue = 1
-                status.overlayVisible = true
+                status.overlayVisible = true; if !iconState.active { iconState.active = true }
             } else if !shouldShow && w.alphaValue > 0 && smoothed >= 1 - eps {
                 w.alphaValue = 0
-                status.overlayVisible = false
+                status.overlayVisible = false; if iconState.active { iconState.active = false }
             }
         }
 
@@ -468,6 +470,11 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         }
         evaluate()
     }
+}
+
+@MainActor
+final class IconState: ObservableObject {
+    @Published var active = false
 }
 
 @MainActor
