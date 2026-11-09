@@ -45,7 +45,7 @@ struct EffectParams: Codable, Equatable {
         d("coverBlurEnd", &coverBlurEnd); d("coverLodScale", &coverLodScale); d("coverReferencePx", &coverReferencePx)
         d("coverShadeLow", &coverShadeLow); d("coverWipeShadeGain", &coverWipeShadeGain); d("coverEdgeBand", &coverEdgeBand)
         d("coverContentShift", &coverContentShift); d("coverTowardHinge", &coverTowardHinge)
-        d("coverKeepHeight", &coverKeepHeight); d("coverEdgeFadeWipe", &coverEdgeFadeWipe)
+        d("coverKeepHeight", &coverKeepHeight); d("coverEdgeFeather", &coverEdgeFeather); d("coverEdgeFadeWipe", &coverEdgeFadeWipe)
         d("maxFrameRate", &maxFrameRate)
         d("lerpDrag", &lerpDrag); d("lerpSnap", &lerpSnap)
         d("openAngle", &openAngle); d("closedAngle", &closedAngle); d("angleCurve", &angleCurve)
@@ -66,7 +66,8 @@ struct EffectParams: Codable, Equatable {
     var coverReferencePx: Double = 775     // size of the reference blur texture across the panel
     var coverShadeLow: Double = 0.25
     var coverWipeShadeGain: Double = 2.75
-    var coverEdgeBand: Double = 0.1
+    var coverEdgeBand: Double = 0          // side darkening bands (reference value 0.1; off on a laptop)
+    var coverEdgeFeather: Double = 0.004   // soft left/right panel edge (fraction of width)
     var coverContentShift: Double = 0.23
     var coverTowardHinge: Bool = false
     var coverKeepHeight: Bool = true       // no vertical squash; only the trapezoid taper
@@ -129,7 +130,7 @@ struct EffectParams: Codable, Equatable {
 }
 
 extension EffectParams {
-    private static let defaultsKey = "EffectParams.v3"
+    private static let defaultsKey = "EffectParams.v4"
 
     static func load(from defaults: UserDefaults = .standard) -> EffectParams {
         guard let data = defaults.data(forKey: defaultsKey),
