@@ -7,32 +7,58 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		015C6EB1F4194EC2D102D188 /* LidAngleSensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B57450DEB1B9E946057A8C2 /* LidAngleSensor.swift */; };
+		089285CCA13B5B1D9547A249 /* EffectEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16FDF926632774AA344A5A5 /* EffectEngine.swift */; };
+		0A549DE3A52342BE6226ABE7 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192B87394AB5E234B5C0A2D /* CompareView.swift */; };
 		0A9F56F4D241D66C657DFB78 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
 		1BD31C90E27A4CA19D149037 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 550EE743F9AA062BB5923006 /* Shaders.metal */; };
 		358F43D6B139FE8F9BB7D87C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF91426142539C1E48D472F /* main.swift */; };
 		373A68E933B2A82DF5056CB3 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
+		56F08ADB9003660E76E7E994 /* PermissionBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39994EA4D650A1C5BF2A70C3 /* PermissionBanner.swift */; };
 		627D59FE2E460D71FE2FCF91 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 550EE743F9AA062BB5923006 /* Shaders.metal */; };
 		7FE9BA3B3A6FC7E53B318627 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 550EE743F9AA062BB5923006 /* Shaders.metal */; };
 		8D6F42D7DD978CA8572758AE /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF3DD4302D85B86627CE1F8 /* Renderer.swift */; };
 		8E529EA7C5D042AC975D4A73 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
+		9F03F383A9489411D1A4A7FF /* LidAngleSensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B57450DEB1B9E946057A8C2 /* LidAngleSensor.swift */; };
 		A657D20DE6E37ACE489B584C /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF3DD4302D85B86627CE1F8 /* Renderer.swift */; };
+		AC2469009D6CEDC91C06297D /* TuningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044A90AB82087F718528433B /* TuningView.swift */; };
 		B78E228B81EE32AC974B5BC3 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF3DD4302D85B86627CE1F8 /* Renderer.swift */; };
+		C06410E40DFC36C0309B99A5 /* ScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */; };
+		D2B6801D8AA65DDC2280A86D /* LidBlurApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D086D42A1D203B45AEF64163 /* LidBlurApp.swift */; };
+		D38139561BF2CA752AEF5965 /* EffectEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16FDF926632774AA344A5A5 /* EffectEngine.swift */; };
+		D80A985CD6F30AA7B4433B83 /* BlurLabApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECFB33514A5C398BF77E7E54 /* BlurLabApp.swift */; };
+		D82D3F67D5881DDC238EC83E /* PermissionBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39994EA4D650A1C5BF2A70C3 /* PermissionBanner.swift */; };
+		D9C31F09BB48F9859C7BA121 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192B87394AB5E234B5C0A2D /* CompareView.swift */; };
+		DAAFC7D3D5A46F2DE4637085 /* TuningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044A90AB82087F718528433B /* TuningView.swift */; };
+		DCABC69E35765E11622F88BA /* ScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		044A90AB82087F718528433B /* TuningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuningView.swift; sourceTree = "<group>"; };
 		0CF29C10F31372B8BD510F71 /* EffectParams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EffectParams.swift; sourceTree = "<group>"; };
+		197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCapturer.swift; sourceTree = "<group>"; };
+		39994EA4D650A1C5BF2A70C3 /* PermissionBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionBanner.swift; sourceTree = "<group>"; };
+		4E676C5D7BEC7EEFB48CCA3F /* BlurLab.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BlurLab.entitlements; sourceTree = "<group>"; };
 		550EE743F9AA062BB5923006 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		58782480F7B750349D1F49BF /* lidblur-render */ = {isa = PBXFileReference; includeInIndex = 0; path = "lidblur-render"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B57450DEB1B9E946057A8C2 /* LidAngleSensor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidAngleSensor.swift; sourceTree = "<group>"; };
 		AA959CF49177C8805199B334 /* LidBlur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LidBlur.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B16FDF926632774AA344A5A5 /* EffectEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EffectEngine.swift; sourceTree = "<group>"; };
+		C502408958FDDD97D1FA79C3 /* LidBlur.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LidBlur.entitlements; sourceTree = "<group>"; };
 		C8748EC320CE7A3BCBB7ACA5 /* BlurLab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlurLab.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAF91426142539C1E48D472F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		D086D42A1D203B45AEF64163 /* LidBlurApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidBlurApp.swift; sourceTree = "<group>"; };
 		DDF3DD4302D85B86627CE1F8 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
+		ECFB33514A5C398BF77E7E54 /* BlurLabApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurLabApp.swift; sourceTree = "<group>"; };
+		F192B87394AB5E234B5C0A2D /* CompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		45988D6221986783D5E844FC /* Lab */ = {
 			isa = PBXGroup;
 			children = (
+				4E676C5D7BEC7EEFB48CCA3F /* BlurLab.entitlements */,
+				ECFB33514A5C398BF77E7E54 /* BlurLabApp.swift */,
 			);
 			path = Lab;
 			sourceTree = "<group>";
@@ -40,6 +66,8 @@
 		4FDAD321185DDCD87358879E /* App */ = {
 			isa = PBXGroup;
 			children = (
+				C502408958FDDD97D1FA79C3 /* LidBlur.entitlements */,
+				D086D42A1D203B45AEF64163 /* LidBlurApp.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -47,9 +75,15 @@
 		848ECA83FCCA36E99044EC6C /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				F192B87394AB5E234B5C0A2D /* CompareView.swift */,
+				B16FDF926632774AA344A5A5 /* EffectEngine.swift */,
 				0CF29C10F31372B8BD510F71 /* EffectParams.swift */,
+				5B57450DEB1B9E946057A8C2 /* LidAngleSensor.swift */,
+				39994EA4D650A1C5BF2A70C3 /* PermissionBanner.swift */,
 				DDF3DD4302D85B86627CE1F8 /* Renderer.swift */,
+				197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */,
 				550EE743F9AA062BB5923006 /* Shaders.metal */,
+				044A90AB82087F718528433B /* TuningView.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -186,9 +220,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D80A985CD6F30AA7B4433B83 /* BlurLabApp.swift in Sources */,
+				D9C31F09BB48F9859C7BA121 /* CompareView.swift in Sources */,
+				D38139561BF2CA752AEF5965 /* EffectEngine.swift in Sources */,
 				8E529EA7C5D042AC975D4A73 /* EffectParams.swift in Sources */,
+				9F03F383A9489411D1A4A7FF /* LidAngleSensor.swift in Sources */,
+				56F08ADB9003660E76E7E994 /* PermissionBanner.swift in Sources */,
 				B78E228B81EE32AC974B5BC3 /* Renderer.swift in Sources */,
+				C06410E40DFC36C0309B99A5 /* ScreenCapturer.swift in Sources */,
 				627D59FE2E460D71FE2FCF91 /* Shaders.metal in Sources */,
+				AC2469009D6CEDC91C06297D /* TuningView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,9 +237,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A549DE3A52342BE6226ABE7 /* CompareView.swift in Sources */,
+				089285CCA13B5B1D9547A249 /* EffectEngine.swift in Sources */,
 				0A9F56F4D241D66C657DFB78 /* EffectParams.swift in Sources */,
+				015C6EB1F4194EC2D102D188 /* LidAngleSensor.swift in Sources */,
+				D2B6801D8AA65DDC2280A86D /* LidBlurApp.swift in Sources */,
+				D82D3F67D5881DDC238EC83E /* PermissionBanner.swift in Sources */,
 				A657D20DE6E37ACE489B584C /* Renderer.swift in Sources */,
+				DCABC69E35765E11622F88BA /* ScreenCapturer.swift in Sources */,
 				7FE9BA3B3A6FC7E53B318627 /* Shaders.metal in Sources */,
+				DAAFC7D3D5A46F2DE4637085 /* TuningView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,7 +338,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -369,7 +417,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -407,7 +455,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
-				INFOPLIST_FILE = App/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LidBlur;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -445,7 +496,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
-				INFOPLIST_FILE = App/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LidBlur;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

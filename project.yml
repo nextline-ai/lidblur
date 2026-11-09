@@ -22,7 +22,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.LidBlur
         PRODUCT_NAME: LidBlur
-        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: LidBlur
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         CODE_SIGN_ENTITLEMENTS: App/LidBlur.entitlements
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -38,7 +41,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.BlurLab
         PRODUCT_NAME: BlurLab
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         CODE_SIGN_ENTITLEMENTS: Lab/BlurLab.entitlements
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
