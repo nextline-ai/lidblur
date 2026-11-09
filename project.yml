@@ -26,6 +26,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.LidBlur
         PRODUCT_NAME: LidBlur
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: LidBlur
@@ -44,6 +45,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.BlurLab
         PRODUCT_NAME: BlurLab
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         CODE_SIGN_ENTITLEMENTS: Lab/BlurLab.entitlements

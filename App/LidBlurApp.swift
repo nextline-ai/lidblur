@@ -7,10 +7,13 @@ struct LidBlurApp: App {
     @StateObject private var engine = EffectEngine(defaultMode: .sensor)
 
     init() {
-        #if DEBUG
-        // Install the automation hook even if the menu is never opened.
-        DispatchQueue.main.async { DebugHooks.installLazily() }
-        #endif
+        DispatchQueue.main.async {
+            #if DEBUG
+            // Install the automation hook even if the menu is never opened.
+            DebugHooks.installLazily()
+            #endif
+            if let e = EffectEngine.shared { OnboardingPresenter.showIfNeeded(engine: e) }
+        }
     }
 
     var body: some Scene {
@@ -45,7 +48,10 @@ struct MenuContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("LidBlur").font(.headline)
-            if !engine.screenPermission { PermissionBanner(engine: engine) }
+            if !engine.screenPermission {
+                PermissionBanner(engine: engine)
+                Button("권한 설정 안내 열기") { OnboardingPresenter.show(engine: engine) }
+            }
             Toggle("효과 켜기", isOn: $engine.enabled)
             Group {
                 MenuStatusText(engine: engine, status: engine.status)

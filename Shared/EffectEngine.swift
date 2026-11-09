@@ -74,6 +74,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private let prewarmDegrees = 20.0
     private let eps = 0.0005
 
+    /// The most recently created engine (one per app).
+    static weak var shared: EffectEngine?
+
     init(defaultMode: InputMode) {
         let saved = UserDefaults.standard.string(forKey: "inputMode").flatMap(InputMode.init(rawValue:))
         inputMode = saved ?? defaultMode
@@ -86,10 +89,10 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             Task { @MainActor in self?.status.captureStatus = "캡처 중단: \(err.localizedDescription)" }
         }
         installObservers()
+        EffectEngine.shared = self
         #if DEBUG
         DebugHooks.current = self
         #endif
-        if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
         // Idle is event driven: the sensor wakes us only when the angle changes.
         sensor.onChange = { [weak self] _ in
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.sensorChanged() } }
@@ -126,7 +129,6 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     func requestScreenPermission() {
-        if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
         screenPermission = CGPreflightScreenCaptureAccess()
     }
 

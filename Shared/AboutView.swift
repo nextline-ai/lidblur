@@ -25,23 +25,26 @@ struct AboutView: View {
             Divider().frame(maxWidth: 420)
 
             HStack(alignment: .top, spacing: 56) {
-                credit(role: "개발", image: "NextLineLogo", height: 34, name: "NextLine", host: "nextline.work")
-                credit(role: "배포", image: "DeaumLogo", height: 54, name: "DEAUM", host: "deaum.org")
+                credit(role: "개발", image: "NextLineLogo", name: "NextLine", host: "nextline.work")
+                credit(role: "배포", image: "DeaumLogo", name: "DEAUM", host: "deaum.org")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
 
+    /// All logos share one height so they read as equals.
+    private let logoHeight: CGFloat = 44
+
     @ViewBuilder
-    private func credit(role: String, image: String, height: CGFloat, name: String, host: String) -> some View {
+    private func credit(role: String, image: String, name: String, host: String) -> some View {
         VStack(spacing: 12) {
             Text(role).font(.caption).foregroundStyle(.secondary)
             Image(image)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(height: height)
+                .frame(height: logoHeight)
                 .accessibilityLabel(name)
             Link(host, destination: URL(string: "https://\(host)")!)
                 .font(.callout)
