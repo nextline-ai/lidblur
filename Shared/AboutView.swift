@@ -15,7 +15,7 @@ struct AboutView: View {
     var body: some View {
         VStack(spacing: 28) {
             VStack(spacing: 6) {
-                Image(nsImage: NSApp.applicationIconImage)
+                Image(nsImage: AppIconImage.current)
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 96, height: 96)
@@ -51,5 +51,13 @@ struct AboutView: View {
                 .font(.callout)
         }
         .frame(minWidth: 180)
+    }
+}
+
+enum AppIconImage {
+    /// The app icon straight from this bundle's compiled assets. `NSApp.applicationIconImage` can come
+    /// from the system icon cache, which may still hold an older icon for the same path.
+    static var current: NSImage {
+        Bundle.main.image(forResource: "AppIcon") ?? NSApp.applicationIconImage
     }
 }

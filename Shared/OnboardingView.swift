@@ -15,7 +15,7 @@ struct OnboardingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HStack(spacing: 14) {
-                Image(nsImage: NSApp.applicationIconImage)
+                Image(nsImage: AppIconImage.current)
                     .resizable().frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("LidBlur 시작하기").font(.title2.weight(.semibold))
