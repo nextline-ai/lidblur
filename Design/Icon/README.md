@@ -11,7 +11,7 @@ python3 make_icon.py   # numpy, pillow 필요
 | 레이어 | 파일 | 비고 |
 |---|---|---|
 | Background | `Layers/Background.svg` (또는 `.png`) | 남색 그라디언트 + 화면 뒤 은은한 보라 빛 |
-| Screen | `Layers/Screen.png` | 사다리꼴로 기운 덮개. 위로 갈수록 흐려지고 어두워짐. 블러가 들어 있어 PNG만 제공 |
+| Screen | `Layers/Screen.png` | 직사각형 디스플레이(베젤) 안에서 화면 내용만 사다리꼴로 기움. 위쪽과 좌우 가장자리로 갈수록 흐려지고 어두워짐. 블러가 들어 있어 PNG만 제공 |
 | Base | `Layers/Base.svg` (또는 `.png`) | 정면에서 본 키보드 데크(알루미늄)와 가운데 홈 |
 
 ## Icon Composer 권장 설정

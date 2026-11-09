@@ -5,6 +5,7 @@ and a masked preview. Run: python3 make_icon.py  (needs numpy + pillow)
 """
 import os, math
 import numpy as np
+from scipy import ndimage
 from PIL import Image, ImageDraw, ImageFilter
 
 S = 4                     # supersampling factor
@@ -18,7 +19,8 @@ def hexc(h, a=255):
 # ---------------------------------------------------------------- geometry (1024 units)
 SCREEN_BOTTOM_Y, SCREEN_TOP_Y = 676, 236
 BOT_X0, BOT_X1 = 196, 828          # bottom (hinge) edge of the lid
-TOP_X0, TOP_X1 = 290, 734          # top (outer) edge: narrower -> tilted away
+TOP_X0, TOP_X1 = 196, 828          # the display itself stays rectangular
+CONTENT_TOP_RATIO = 0.74           # the content inside tilts: its top edge is this fraction of the bottom
 BEZEL = 18                         # bezel thickness around the screen
 BASE_Y0, BASE_Y1 = 684, 742        # keyboard deck seen from the front
 BASE_X0, BASE_X1 = 128, 896
@@ -38,7 +40,7 @@ def rounded_poly_mask(points, radius, size=N):
         # round corners: blur + threshold keeps straight edges, rounds corners
         b = m.filter(ImageFilter.GaussianBlur(r * 0.55))
         a = np.asarray(b).astype(np.float32)
-        a = np.clip((a - 127.5) * 4 + 127.5, 0, 255)
+        a = np.clip((a - 127.5) * 40 + 127.5, 0, 255)   # crisp edge (only ~1 px of anti-aliasing at 4x)
         m = Image.fromarray(a.astype(np.uint8))
     return m
 
@@ -119,20 +121,50 @@ def blur_gradient(img, top_frac=1.0):
     out[..., :3] *= shade
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), 'RGBA')
 
+def tilt_content(img, top_ratio):
+    """Squeeze the content into a trapezoid (narrower toward the top, like the panel tilting away),
+    with blur and a soft fade toward its left/right edges."""
+    a = np.asarray(img).astype(np.float32)
+    h, w = a.shape[:2]
+    t = np.linspace(0, 1, h, dtype=np.float32)[:, None]          # 0 top, 1 bottom
+    scale = top_ratio + (1 - top_ratio) * t                        # row width / full width
+    xs = np.arange(w, dtype=np.float32)[None, :]
+    cx = (w - 1) / 2
+    src_x = (xs - cx) / scale + cx
+    yy = np.broadcast_to(np.arange(h, dtype=np.float32)[:, None], (h, w))
+    warped = np.stack([ndimage.map_coordinates(a[..., c], [yy, src_x], order=1, mode='nearest') for c in range(4)], -1)
+    # distance from the row's side edge, 0 at the edge, 1 at the centre
+    half = scale * w / 2
+    dist = np.clip((half - np.abs(xs - cx)) / half, -1, 1)
+    def smooth(e0, e1, x):
+        k = np.clip((x - e0) / (e1 - e0), 0, 1); return k * k * (3 - 2 * k)
+    # side blur: mix toward a heavily blurred copy near the edges (wider toward the top)
+    heavy = np.stack([ndimage.gaussian_filter(warped[..., c], sigma=w * 0.03) for c in range(4)], -1)
+    band = 0.10 + 0.12 * (1 - t)                                   # blur band width (fraction of half width)
+    keep = smooth(0.0, band, dist)[..., None]
+    out = warped * keep + heavy * (1 - keep)
+    # soft fade into the black screen at the very edge, plus slight darkening of the band
+    fade = smooth(0.0, 0.05 + 0.05 * (1 - t), dist)
+    out[..., :3] *= (0.55 + 0.45 * keep)
+    out[..., 3] *= fade
+    return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), 'RGBA')
+
 def screen_layer():
     outer = trapezoid(BOT_X0, BOT_X1, TOP_X0, TOP_X1, SCREEN_BOTTOM_Y, SCREEN_TOP_Y)
     lid_mask = rounded_poly_mask(outer, u(30))
     inner = inset(outer, u(BEZEL))
     scr_mask = rounded_poly_mask(inner, u(16))
     layer = Image.new('RGBA', (N, N), (0, 0, 0, 0))
-    # bezel: near-black with a faint vertical sheen
     bez = Image.new('RGBA', (N, N), hexc('#0A0C12'))
     layer.paste(bez, (0, 0), lid_mask)
-    # content: render a rectangle covering the screen bbox, warp-free (the panel itself is the tilt cue)
+    # the screen itself is black; the tilted content panel sits inside it
     xs = [p[0] for p in inner]; ys = [p[1] for p in inner]
     bx0, by0, bx1, by1 = int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))
     content = blur_gradient(wallpaper(bx1 - bx0, by1 - by0))
-    full = Image.new('RGBA', (N, N), (0, 0, 0, 0)); full.paste(content, (bx0, by0))
+    content = tilt_content(content, CONTENT_TOP_RATIO)
+    screen = Image.new('RGBA', (bx1 - bx0, by1 - by0), hexc('#020306'))
+    screen.alpha_composite(content)
+    full = Image.new('RGBA', (N, N), (0, 0, 0, 0)); full.paste(screen, (bx0, by0))
     layer.paste(full, (0, 0), scr_mask)
     return layer
 
