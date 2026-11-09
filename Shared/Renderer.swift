@@ -42,7 +42,6 @@ struct CoverUniforms {
     var wipeShadeGain: Float = 2.75
     var edgeBand: Float = 0.1
     var edgeFadeWipe: Float = 0.1
-    var edgeFeather: Float = 0.004
     var hasSource: Int32 = 0
     var towardHinge: Int32 = 1
     var keepHeight: Int32 = 1
@@ -182,7 +181,6 @@ final class EffectRenderer {
         u.towardHinge = params.coverTowardHinge ? 1 : 0
         u.keepHeight = params.coverKeepHeight ? 1 : 0
         u.edgeFadeWipe = Float(params.coverEdgeFadeWipe)
-        u.edgeFeather = Float(params.coverEdgeFeather)
         return u
     }
 

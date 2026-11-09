@@ -44,8 +44,7 @@ struct TuningView: View {
                     ParamSlider("기준 텍스처 크기(px)", value: $engine.params.coverReferencePx, range: 200...3000, format: "%.0f")
                     ParamSlider("블러 연동 최저 밝기", value: $engine.params.coverShadeLow, range: 0...1)
                     ParamSlider("경첩 쪽 어두워짐 이득", value: $engine.params.coverWipeShadeGain, range: 0...6)
-                    ParamSlider("좌우 가장자리 띠 (원본 0.1)", value: $engine.params.coverEdgeBand, range: 0...0.5, format: "%.3f")
-                    ParamSlider("좌우 테두리 부드러움", value: $engine.params.coverEdgeFeather, range: 0...0.05, format: "%.3f")
+                    ParamSlider("좌우 가장자리 띠", value: $engine.params.coverEdgeBand, range: 0.001...0.5, format: "%.3f")
                     ParamSlider("좌우 띠가 다 나타나는 wipe", value: $engine.params.coverEdgeFadeWipe, range: 0.001...0.5, format: "%.3f")
                 }
             }

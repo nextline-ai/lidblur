@@ -162,8 +162,7 @@ struct CoverUniforms {
     float shadeLow;
     float wipeShadeGain;
     float edgeBand;
-    float edgeFadeWipe;    // side bands / edge feather reach full size at this wipe
-    float edgeFeather;     // inside feather of the left/right panel edges (fraction of width)
+    float edgeFadeWipe;    // side bands reach full strength at this wipe
     int   hasSource;
     int   towardHinge;     // 1: blur/shade grow toward the hinge, 0: toward the outer edge (reference)
     int   keepHeight;      // 1: no vertical foreshortening, only the trapezoid taper
@@ -200,9 +199,7 @@ fragment float4 cover_fs(VOut in [[stage_in]],
     // Anti-aliased panel coverage.
     float2 fw = max(fwidth(tuv), float2(1e-6));
     float2 hw = 0.5 * fw;   // centred on the boundary, so the flat panel is an exact identity
-    // Narrow inside feather on the tapered left/right edges (grows with the tilt, 0 when flat).
-    float feather = u.edgeFeather * saturate(u.wipe / max(u.edgeFadeWipe, 1e-4));
-    float cov = smoothstep(-hw.x, hw.x + feather, tuv.x) * smoothstep(-hw.x, hw.x + feather, 1.0 - tuv.x)
+    float cov = smoothstep(-hw.x, hw.x, tuv.x) * smoothstep(-hw.x, hw.x, 1.0 - tuv.x)
               * smoothstep(-hw.y, hw.y, tuv.y) * smoothstep(-hw.y, hw.y, 1.0 - tuv.y);
     if (cov <= 0.0) return float4(0, 0, 0, 1);
 
@@ -228,10 +225,8 @@ fragment float4 cover_fs(VOut in [[stage_in]],
     float shade = mix(u.shadeLow, 1.0, smoothstep(1.3, 0.9, blurArea));
     // Side bands: always full strength, their width grows from 0 with the tilt (soft edges from the
     // first degree, exact identity when flat).
-    if (u.edgeBand > 0.0) {   // optional side bands (off by default: they read as a separate effect on a laptop)
-        float bandW = max(u.edgeBand * saturate(u.wipe / max(u.edgeFadeWipe, 1e-4)), 1e-5);
-        shade *= smoothstep(1.0, 1.0 - bandW, abs(tuv.x - 0.5) * 2.0);
-    }
+    float bandW = max(u.edgeBand * saturate(u.wipe / max(u.edgeFadeWipe, 1e-4)), 1e-5);
+    shade *= smoothstep(1.0, 1.0 - bandW, abs(tuv.x - 0.5) * 2.0);
     shade *= 1.0 - saturate(u.wipe * u.wipeShadeGain) * smoothstep(0.0, 1.0, d);
     float edges = smoothstep(1.1, 1.0, suv.y) * smoothstep(-0.1, 0.0, suv.y);
     return float4(c.rgb * shade * edges * cov, 1.0);
