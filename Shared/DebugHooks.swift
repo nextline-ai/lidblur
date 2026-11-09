@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 
 #if DEBUG
-/// Automation hook for testing: `studio.xtower.lidblur.debug` distributed notification with
+/// Automation hook for testing: `work.nextline.lidblur.debug` distributed notification with
 /// userInfo ["progress": "0.7"] or ["mode": "manual"|"sensor"].
 @MainActor
 enum DebugHooks {
@@ -12,7 +12,7 @@ enum DebugHooks {
     static func installLazily() { if let e = current { install(engine: e) } }
     static func install(engine: EffectEngine) {
         guard token == nil else { return }
-        token = DistributedNotificationCenter.default().addObserver(forName: Notification.Name("studio.xtower.lidblur.debug"), object: nil, queue: .main) { n in
+        token = DistributedNotificationCenter.default().addObserver(forName: Notification.Name("work.nextline.lidblur.debug"), object: nil, queue: .main) { n in
             MainActor.assumeIsolated {
                 if let p = (n.userInfo?["progress"] as? String).flatMap(Double.init) { engine.inputMode = .manual; engine.manualProgress = p }
                 if let m = (n.userInfo?["mode"] as? String).flatMap(EffectEngine.InputMode.init(rawValue:)) { engine.inputMode = m }

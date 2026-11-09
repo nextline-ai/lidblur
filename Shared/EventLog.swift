@@ -6,7 +6,7 @@ import os
 /// Written to Application Support/LidBlur/events.csv (inside the sandbox container for the App Store build).
 final class EventLog {
     static let shared = EventLog()
-    private let queue = DispatchQueue(label: "studio.xtower.lidblur.log")
+    private let queue = DispatchQueue(label: "work.nextline.lidblur.log")
     private var handle: FileHandle?
     private(set) var url: URL?
     #if DEBUG
@@ -30,7 +30,7 @@ final class EventLog {
         handle?.seekToEndOfFile()
     }
 
-    private let logger = Logger(subsystem: "studio.xtower.lidblur", category: "events")
+    private let logger = Logger(subsystem: "work.nextline.lidblur", category: "events")
 
     func log(_ event: String, _ v1: Double? = nil, _ v2: Double? = nil) {
         guard enabled else { return }

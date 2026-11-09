@@ -12,7 +12,7 @@ final class LidAngleSensor {
     private var _angle: Double?
     private var _timestamp: CFTimeInterval = 0
     private var timer: DispatchSourceTimer?
-    private let queue = DispatchQueue(label: "studio.xtower.lidblur.sensor", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "work.nextline.lidblur.sensor", qos: .userInteractive)
     private(set) var statusText: String = "초기화 전"
     private var currentHz: Double = 0
     /// Called on the sensor queue whenever the raw angle changes.

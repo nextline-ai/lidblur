@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import ServiceManagement
 
 /// First-run guide: explains what the app does and walks through the Screen Recording permission.

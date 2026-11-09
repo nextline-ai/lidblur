@@ -7,7 +7,7 @@ import AppKit
 /// Captures one display (excluding this app's own windows) and keeps the most recent frame.
 final class ScreenCapturer: NSObject, SCStreamOutput, SCStreamDelegate {
     private var stream: SCStream?
-    private let queue = DispatchQueue(label: "studio.xtower.lidblur.capture", qos: .userInteractive)
+    private let queue = DispatchQueue(label: "work.nextline.lidblur.capture", qos: .userInteractive)
     private let lock = NSLock()
     private var latest: CVPixelBuffer?
     private var sequence: UInt64 = 0

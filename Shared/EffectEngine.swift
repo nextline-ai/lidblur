@@ -84,7 +84,6 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         renderer = try? EffectRenderer()
         if let r = renderer { textureCache = PixelBufferTextureCache(device: r.device) }
         status.sensorStatus = sensor.statusText
-        NSLog("LidBlur: sensor %@ angle %@", sensor.statusText, sensor.angle.map { String($0) } ?? "nil")
         capturer.onError = { [weak self] err in
             Task { @MainActor in self?.status.captureStatus = "캡처 중단: \(err.localizedDescription)" }
         }

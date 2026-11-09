@@ -10,6 +10,7 @@
 		015C6EB1F4194EC2D102D188 /* LidAngleSensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B57450DEB1B9E946057A8C2 /* LidAngleSensor.swift */; };
 		089285CCA13B5B1D9547A249 /* EffectEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16FDF926632774AA344A5A5 /* EffectEngine.swift */; };
 		0A9F56F4D241D66C657DFB78 /* EffectParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF29C10F31372B8BD510F71 /* EffectParams.swift */; };
+		0C3A569582DBD29E50079B0A /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AE9A0EDA735DF145886C4C50 /* AppIcon.icon */; };
 		1600F1AE8307E33BF1100494 /* ImageOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06E11624CC224E31F6ACE4DB /* ImageOps.swift */; };
 		1BD31C90E27A4CA19D149037 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 550EE743F9AA062BB5923006 /* Shaders.metal */; };
 		2E5C5E1FE1B7D56A4B95DDD2 /* DebugHooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */; };
@@ -41,6 +42,8 @@
 		D82D3F67D5881DDC238EC83E /* PermissionBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39994EA4D650A1C5BF2A70C3 /* PermissionBanner.swift */; };
 		DAAFC7D3D5A46F2DE4637085 /* TuningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044A90AB82087F718528433B /* TuningView.swift */; };
 		DCABC69E35765E11622F88BA /* ScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197AB56FA2B038AE4BE1492B /* ScreenCapturer.swift */; };
+		F420257C0701204080BDBCDC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF730DB0E165831AB3E92F04 /* PrivacyInfo.xcprivacy */; };
+		FFB58F94124E23541DD89C3A /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AE9A0EDA735DF145886C4C50 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +61,8 @@
 		63B7448D3AEB2E4E4F25A5FE /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		95592BC255A846DA6982BAF8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA959CF49177C8805199B334 /* LidBlur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LidBlur.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE9A0EDA735DF145886C4C50 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		AF730DB0E165831AB3E92F04 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B16FDF926632774AA344A5A5 /* EffectEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EffectEngine.swift; sourceTree = "<group>"; };
 		C502408958FDDD97D1FA79C3 /* LidBlur.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LidBlur.entitlements; sourceTree = "<group>"; };
 		C8748EC320CE7A3BCBB7ACA5 /* BlurLab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlurLab.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,6 +88,7 @@
 			children = (
 				C502408958FDDD97D1FA79C3 /* LidBlur.entitlements */,
 				D086D42A1D203B45AEF64163 /* LidBlurApp.swift */,
+				AF730DB0E165831AB3E92F04 /* PrivacyInfo.xcprivacy */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -91,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				4C40BC578CA6879AD38E66EA /* AboutView.swift */,
+				AE9A0EDA735DF145886C4C50 /* AppIcon.icon */,
 				95592BC255A846DA6982BAF8 /* Assets.xcassets */,
 				FD0704E3468B40CD2977BCF2 /* DebugHooks.swift */,
 				B16FDF926632774AA344A5A5 /* EffectEngine.swift */,
@@ -204,11 +211,9 @@
 				TargetAttributes = {
 					3ABAECE41E94412B8360F9A4 = {
 						DevelopmentTeam = 6HV24C77H5;
-						ProvisioningStyle = Manual;
 					};
 					B09337572B9720E9CDF73AB1 = {
 						DevelopmentTeam = 6HV24C77H5;
-						ProvisioningStyle = Manual;
 					};
 					C4C4206B8CBBD772C21EC03E = {
 						DevelopmentTeam = "";
@@ -242,6 +247,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0C3A569582DBD29E50079B0A /* AppIcon.icon in Resources */,
 				ADF5E86E94CEE0640110BDA0 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -250,7 +256,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FFB58F94124E23541DD89C3A /* AppIcon.icon in Resources */,
 				81FB761396D398C0F7D8A5D3 /* Assets.xcassets in Resources */,
+				F420257C0701204080BDBCDC /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,8 +403,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.xtower.BlurLab;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = work.nextline.blurlab;
 				PRODUCT_NAME = BlurLab;
 				SDKROOT = macosx;
 			};
@@ -435,8 +443,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "Developer ID Application: daeummoyang (6HV24C77H5)";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6HV24C77H5;
@@ -454,9 +462,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_CODE_SIGN_FLAGS = "--timestamp=none";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -477,8 +483,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.xtower.BlurLab;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = work.nextline.blurlab;
 				PRODUCT_NAME = BlurLab;
 				SDKROOT = macosx;
 			};
@@ -496,7 +502,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "studio.xtower.lidblur-render";
+				PRODUCT_BUNDLE_IDENTIFIER = "work.nextline.lidblur-render";
 				PRODUCT_NAME = "lidblur-render";
 				SDKROOT = macosx;
 			};
@@ -512,14 +518,16 @@
 				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = LidBlur;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 NextLine";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.xtower.LidBlur;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = work.nextline.lidblur;
 				PRODUCT_NAME = LidBlur;
 				SDKROOT = macosx;
 			};
@@ -537,7 +545,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "studio.xtower.lidblur-render";
+				PRODUCT_BUNDLE_IDENTIFIER = "work.nextline.lidblur-render";
 				PRODUCT_NAME = "lidblur-render";
 				SDKROOT = macosx;
 			};
@@ -553,14 +561,16 @@
 				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = LidBlur;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 NextLine";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = studio.xtower.LidBlur;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = work.nextline.lidblur;
 				PRODUCT_NAME = LidBlur;
 				SDKROOT = macosx;
 			};

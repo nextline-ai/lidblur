@@ -1,6 +1,6 @@
 name: LidBlur
 options:
-  bundleIdPrefix: studio.xtower
+  bundleIdPrefix: work.nextline
   deploymentTarget:
     macOS: "15.0"
   createIntermediateGroups: true
@@ -10,11 +10,17 @@ settings:
     DEVELOPMENT_TEAM: 6HV24C77H5
     MACOSX_DEPLOYMENT_TARGET: "15.0"
     ENABLE_HARDENED_RUNTIME: YES
-    # Fixed signing identity so macOS privacy permissions (Screen Recording) survive rebuilds.
-    CODE_SIGN_STYLE: Manual
-    CODE_SIGN_IDENTITY: "Developer ID Application: daeummoyang (6HV24C77H5)"
-    PROVISIONING_PROFILE_SPECIFIER: ""
-    OTHER_CODE_SIGN_FLAGS: "--timestamp=none"
+  configs:
+    Debug:
+      # Fixed signing identity so macOS privacy permissions (Screen Recording) survive rebuilds.
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGN_IDENTITY: "Developer ID Application: daeummoyang (6HV24C77H5)"
+      PROVISIONING_PROFILE_SPECIFIER: ""
+      OTHER_CODE_SIGN_FLAGS: "--timestamp=none"
+    Release:
+      # Mac App Store: Xcode manages the profile; export re-signs with Apple Distribution.
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "Apple Development"
 targets:
   LidBlur:
     type: application
@@ -24,15 +30,17 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.LidBlur
+        PRODUCT_BUNDLE_IDENTIFIER: work.nextline.lidblur
         PRODUCT_NAME: LidBlur
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: LidBlur
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 NextLine"
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         CODE_SIGN_ENTITLEMENTS: App/LidBlur.entitlements
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         ENABLE_APP_SANDBOX: YES
   BlurLab:
@@ -43,13 +51,13 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.BlurLab
+        PRODUCT_BUNDLE_IDENTIFIER: work.nextline.blurlab
         PRODUCT_NAME: BlurLab
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         CODE_SIGN_ENTITLEMENTS: Lab/BlurLab.entitlements
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
   lidblur-render:
     type: tool
@@ -66,3 +74,6 @@ targets:
         CODE_SIGN_IDENTITY: "-"
         DEVELOPMENT_TEAM: ""
         ENABLE_HARDENED_RUNTIME: NO
+      configs:
+        Debug: { CODE_SIGN_STYLE: Manual, CODE_SIGN_IDENTITY: "-" }
+        Release: { CODE_SIGN_STYLE: Manual, CODE_SIGN_IDENTITY: "-" }
