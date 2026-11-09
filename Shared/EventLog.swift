@@ -1,5 +1,6 @@
 import Foundation
 import QuartzCore
+import os
 
 /// Lightweight CSV event log for tuning on real hardware (angle samples, sleep/wake, capture timing).
 /// Written to Application Support/LidBlur/events.csv (inside the sandbox container for the App Store build).
@@ -29,8 +30,11 @@ final class EventLog {
         handle?.seekToEndOfFile()
     }
 
+    private let logger = Logger(subsystem: "studio.xtower.lidblur", category: "events")
+
     func log(_ event: String, _ v1: Double? = nil, _ v2: Double? = nil) {
         guard enabled else { return }
+        logger.log("ev \(event, privacy: .public) \(v1 ?? .nan, privacy: .public) \(v2 ?? .nan, privacy: .public) t=\(CACurrentMediaTime(), privacy: .public)")
         let line = String(format: "%.3f,%.4f,%@,%@,%@\n", Date().timeIntervalSince1970, CACurrentMediaTime(), event,
                           v1.map { String(format: "%.4f", $0) } ?? "", v2.map { String(format: "%.4f", $0) } ?? "")
         queue.async { [handle] in handle?.write(line.data(using: .utf8)!) }

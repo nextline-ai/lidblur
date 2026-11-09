@@ -66,7 +66,7 @@ struct EffectParams: Codable, Equatable {
     var coverWipeShadeGain: Double = 2.75
     var coverEdgeBand: Double = 0.1
     var coverContentShift: Double = 0.23
-    var coverTowardHinge: Bool = true
+    var coverTowardHinge: Bool = false
 
     // Spatial gradient (t = 0 at the hinge, 1 at the outer edge of the lid)
     var direction: GradientDirection = .towardOuterEdge

@@ -35,7 +35,7 @@ struct TuningView: View {
                     ParamSlider("카메라 높이 (시작)", value: $engine.params.coverCameraHeightStart, range: 0...1)
                     ParamSlider("카메라 높이 (끝)", value: $engine.params.coverCameraHeightEnd, range: 0...1)
                     ParamSlider("내용 밀림", value: $engine.params.coverContentShift, range: 0...0.5, format: "%.3f")
-                    Toggle("블러·음영이 경첩(아래) 쪽으로 강해짐", isOn: $engine.params.coverTowardHinge)
+                    Toggle("블러·음영이 경첩(아래) 쪽으로 강해짐 (원본은 꺼짐: 바깥쪽 끝으로 강해짐)", isOn: $engine.params.coverTowardHinge)
                 }
                 Section("블러 / 음영 (원본 공식)") {
                     ParamSlider("완전 기울기에서 wipe", value: $engine.params.coverWipeAtFullTilt, range: 0...1)
