@@ -53,12 +53,15 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private var settledSince: CFTimeInterval?
     private var farSince: CFTimeInterval?
     private var snapUntil: CFTimeInterval = 0       // fallback animation uses lerpSnap until then
-    private var captureStarting = false
+    private var startToken: Int?            // non-nil while a capture start is in flight
+    private var nextStartToken = 0
+    private var captureStarting: Bool { startToken != nil }
     private var lastUIUpdate: CFTimeInterval = 0
     private var clamshellClosedAtSleep = false
     private var systemAsleep = false
     private var screenLocked = false
     private var captureGeneration = 0
+    private var captureStartAt: CFTimeInterval = 0
     private var observers: [NSObjectProtocol] = []
 
     /// Degrees above `openAngle` at which capture is pre-started so the first frame is ready.
@@ -90,7 +93,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     // MARK: Input
 
     private var target: Double {
-        guard enabled, builtInPresent else { return 1 }
+        guard enabled, builtInPresent, !screenLocked else { return 1 }
         switch inputMode {
         case .manual: return manualProgress
         case .sensor:
@@ -207,9 +210,18 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     // MARK: Capture
 
     private func ensureCapture() {
-        guard !systemAsleep, !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
+        if captureStarting, CACurrentMediaTime() - captureStartAt > 4 {
+            // A start that never returned (e.g. requested around sleep/lock): abandon it and retry.
+            EventLog.shared.log("captureStartTimeout")
+            captureGeneration += 1
+            startToken = nil
+        }
+        guard !systemAsleep, !screenLocked, !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
         guard CGPreflightScreenCaptureAccess() else { captureStatus = "화면 기록 권한 필요"; return }
-        captureStarting = true
+        nextStartToken += 1
+        let token = nextStartToken
+        startToken = token
+        captureStartAt = CACurrentMediaTime()
         captureStatus = "캡처 시작 중"
         let (w, h) = screen.pixelSize
         let gen = captureGeneration
@@ -217,14 +229,16 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             do {
                 try await capturer.start(displayID: id, pixelWidth: w, pixelHeight: h)
                 if gen != captureGeneration || systemAsleep {   // a restart was requested meanwhile
-                    await capturer.stop(); captureStarting = false; return
+                    await capturer.stop()
+                    if startToken == token { startToken = nil }
+                    return
                 }
                 EventLog.shared.log("captureStarted", sensor.angle)
                 captureStatus = "캡처 중 (\(w)×\(h))"
             } catch {
                 captureStatus = "캡처 실패: \(error.localizedDescription)"
             }
-            captureStarting = false
+            if startToken == token { startToken = nil }
         }
     }
 
@@ -251,9 +265,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             return
         }
         let w = OverlayWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
-        // Above the lock screen shield too, so the effect also plays while opening into the lock screen.
-        w.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()) + 1)
-        w.canBecomeVisibleWithoutLogin = true
+        w.level = .screenSaver   // the lock screen is protected by macOS; the effect never draws over it
         w.ignoresMouseEvents = true
         w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         w.isOpaque = false
@@ -349,7 +361,8 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             MainActor.assumeIsolated {
                 EventLog.shared.log("locked")
                 self?.screenLocked = true
-                self?.restartCapture()          // never show pre-lock content over the lock screen
+                self?.restartCapture()
+                self?.deactivate()
             }
         })
         observers.append(dnc.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in

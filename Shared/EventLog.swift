@@ -34,7 +34,9 @@ final class EventLog {
 
     func log(_ event: String, _ v1: Double? = nil, _ v2: Double? = nil) {
         guard enabled else { return }
-        logger.log("ev \(event, privacy: .public) \(v1 ?? .nan, privacy: .public) \(v2 ?? .nan, privacy: .public) t=\(CACurrentMediaTime(), privacy: .public)")
+        if event != "angle" {   // angle samples only go to the CSV (keeps the unified log volume low)
+            logger.log("ev \(event, privacy: .public) \(v1 ?? .nan, privacy: .public) \(v2 ?? .nan, privacy: .public) t=\(CACurrentMediaTime(), privacy: .public)")
+        }
         let line = String(format: "%.3f,%.4f,%@,%@,%@\n", Date().timeIntervalSince1970, CACurrentMediaTime(), event,
                           v1.map { String(format: "%.4f", $0) } ?? "", v2.map { String(format: "%.4f", $0) } ?? "")
         queue.async { [handle] in handle?.write(line.data(using: .utf8)!) }

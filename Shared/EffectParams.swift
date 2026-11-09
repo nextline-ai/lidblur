@@ -53,7 +53,7 @@ struct EffectParams: Codable, Equatable {
     var style: EffectStyle = .coverPanel
 
     // Cover-panel style (values follow the reference effect)
-    var coverTiltMax: Double = 45          // degrees of virtual tilt at full close (90 = edge-on)
+    var coverTiltMax: Double = 80          // degrees of virtual tilt at full close (90 = edge-on)
     var coverCameraDistance: Double = 3.44 // virtual camera distance in display heights
     var coverCameraHeightStart: Double = 0.5   // camera height above the hinge at rest (display heights)
     var coverCameraHeightEnd: Double = 0.28    // ... at full tilt
@@ -125,7 +125,7 @@ struct EffectParams: Codable, Equatable {
 }
 
 extension EffectParams {
-    private static let defaultsKey = "EffectParams.v2"
+    private static let defaultsKey = "EffectParams.v3"
 
     static func load(from defaults: UserDefaults = .standard) -> EffectParams {
         guard let data = defaults.data(forKey: defaultsKey),
