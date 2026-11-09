@@ -51,11 +51,15 @@ final class ScreenCapturer: NSObject, SCStreamOutput, SCStreamDelegate {
     }
 
     func stop() async {
-        guard let s = stream else { return }
+        lock.withLock { latest = nil }          // never reuse a frame from a stopped stream
+        guard let s = stream else { isRunning = false; return }
         stream = nil
         isRunning = false
         try? await s.stopCapture()
     }
+
+    /// Drops the cached frame (e.g. when the screen locks) without stopping the stream.
+    func discardLatest() { lock.withLock { latest = nil } }
 
     // MARK: SCStreamOutput
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {

@@ -56,6 +56,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private var captureStarting = false
     private var lastUIUpdate: CFTimeInterval = 0
     private var clamshellClosedAtSleep = false
+    private var systemAsleep = false
+    private var screenLocked = false
+    private var captureGeneration = 0
     private var observers: [NSObjectProtocol] = []
 
     /// Degrees above `openAngle` at which capture is pre-started so the first frame is ready.
@@ -204,14 +207,18 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     // MARK: Capture
 
     private func ensureCapture() {
-        guard !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
+        guard !systemAsleep, !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
         guard CGPreflightScreenCaptureAccess() else { captureStatus = "화면 기록 권한 필요"; return }
         captureStarting = true
         captureStatus = "캡처 시작 중"
         let (w, h) = screen.pixelSize
+        let gen = captureGeneration
         Task {
             do {
                 try await capturer.start(displayID: id, pixelWidth: w, pixelHeight: h)
+                if gen != captureGeneration || systemAsleep {   // a restart was requested meanwhile
+                    await capturer.stop(); captureStarting = false; return
+                }
                 EventLog.shared.log("captureStarted", sensor.angle)
                 captureStatus = "캡처 중 (\(w)×\(h))"
             } catch {
@@ -222,9 +229,17 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     private func stopCapture() {
+        captureGeneration += 1
         Task { await capturer.stop() }
         captureStatus = "대기"
         farSince = nil
+    }
+
+    /// Full restart of the capture path: new stream, no stale frames.
+    private func restartCapture() {
+        stopCapture()
+        renderer?.invalidateSource()
+        lastSeq = 0
     }
 
     // MARK: Overlay window
@@ -236,7 +251,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             return
         }
         let w = OverlayWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
-        w.level = .screenSaver
+        // Above the lock screen shield too, so the effect also plays while opening into the lock screen.
+        w.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()) + 1)
+        w.canBecomeVisibleWithoutLogin = true
         w.ignoresMouseEvents = true
         w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         w.isOpaque = false
@@ -321,7 +338,26 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             MainActor.assumeIsolated { self?.didWake() }
         })
         observers.append(ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { EventLog.shared.log("screensDidSleep", self?.sensor.readOnce()) }
+            MainActor.assumeIsolated {
+                EventLog.shared.log("screensDidSleep", self?.sensor.readOnce())
+                self?.systemAsleep = true
+                self?.restartCapture()
+            }
+        })
+        let dnc = DistributedNotificationCenter.default()
+        observers.append(dnc.addObserver(forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                EventLog.shared.log("locked")
+                self?.screenLocked = true
+                self?.restartCapture()          // never show pre-lock content over the lock screen
+            }
+        })
+        observers.append(dnc.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                EventLog.shared.log("unlocked")
+                self?.screenLocked = false
+                self?.restartCapture()
+            }
         })
         observers.append(ws.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { EventLog.shared.log("screensDidWake", self?.sensor.readOnce()); self?.didWake() }
@@ -332,16 +368,19 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     private func willSleep() {
+        systemAsleep = true
         clamshellClosedAtSleep = Clamshell.isClosed
         EventLog.shared.log("willSleep", sensor.angle, clamshellClosedAtSleep ? 1 : 0)
-        stopCapture()
+        restartCapture()
     }
 
     private var lastWakeHandled: CFTimeInterval = -10
     private func didWake() {
         let now = CACurrentMediaTime()
+        systemAsleep = false
         guard now - lastWakeHandled > 2 else { return }   // didWake and screensDidWake both arrive
         lastWakeHandled = now
+        restartCapture()
         EventLog.shared.log("didWake", sensor.readOnce(), Clamshell.isClosed ? 1 : 0)
         if !sensor.isAvailable { _ = sensor.openDevice() }
         sensorStatus = sensor.statusText
@@ -364,10 +403,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             deactivate()
             window?.close(); window = nil; mtkView = nil
             stopCapture()
-        } else if let screen = Displays.builtInScreen, let w = window, w.frame != screen.frame {
-            w.setFrame(screen.frame, display: false)
-            stopCapture()
-            renderer?.invalidateSource()
+        } else {
+            if let screen = Displays.builtInScreen, let w = window, w.frame != screen.frame { w.setFrame(screen.frame, display: false) }
+            restartCapture()   // the display may have been re-created; never keep a stream bound to the old one
         }
         evaluate()
     }

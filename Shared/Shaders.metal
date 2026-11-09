@@ -228,8 +228,10 @@ fragment float4 cover_fs(VOut in [[stage_in]],
 
     // Shading: blur-linked darkening, darkening toward the hinge, and the panel's side edges.
     float shade = mix(u.shadeLow, 1.0, smoothstep(1.3, 0.9, blurArea));
-    float band = smoothstep(1.0, 1.0 - u.edgeBand, abs(tuv.x - 0.5) * 2.0);
-    shade *= mix(1.0, band, saturate(u.wipe / max(u.edgeFadeWipe, 1e-4)));   // fades in with the tilt
+    // Side bands: always full strength, their width grows from 0 with the tilt (soft edges from the
+    // first degree, exact identity when flat).
+    float bandW = max(u.edgeBand * saturate(u.wipe / max(u.edgeFadeWipe, 1e-4)), 1e-5);
+    shade *= smoothstep(1.0, 1.0 - bandW, abs(tuv.x - 0.5) * 2.0);
     shade *= 1.0 - saturate(u.wipe * u.wipeShadeGain) * smoothstep(0.0, 1.0, d);
     float edges = smoothstep(1.1, 1.0, suv.y) * smoothstep(-0.1, 0.0, suv.y);
     return float4(c.rgb * shade * edges * cov, 1.0);
