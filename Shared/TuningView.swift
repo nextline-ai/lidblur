@@ -20,6 +20,7 @@ struct TuningView: View {
                 LabeledContent("센서", value: engine.sensorStatus)
                 LabeledContent("캡처", value: engine.captureStatus)
                 Button("닫힘→열림 대체 애니메이션 미리보기") { engine.playOpenAnimation() }
+                EventLogToggle()
             }
             Section("덮개 각도 → 진행도") {
                 ParamSlider("효과 시작 각도", value: $engine.params.openAngle, range: 30...140, format: "%.0f°")
@@ -92,6 +93,17 @@ struct ParamSlider: View {
             Text(title).frame(width: 170, alignment: .leading)
             Slider(value: $value, in: range)
             Text(String(format: format, value)).monospacedDigit().frame(width: 52, alignment: .trailing)
+        }
+    }
+}
+
+struct EventLogToggle: View {
+    @State private var on = EventLog.shared.enabled
+    var body: some View {
+        HStack {
+            Toggle("실기기 측정 로그 기록", isOn: $on).onChange(of: on) { _, v in EventLog.shared.enabled = v }
+            Spacer()
+            Button("로그 보기") { if let u = EventLog.shared.url { NSWorkspace.shared.activateFileViewerSelecting([u]) } }
         }
     }
 }

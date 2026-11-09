@@ -2,6 +2,7 @@ import AppKit
 import MetalKit
 import QuartzCore
 import IOKit
+import ImageIO
 
 /// Drives the whole effect: input (lid angle / debug slider / fallback animation) -> smoothed progress
 /// -> screen capture -> blur pyramid -> full-screen overlay on the built-in display.
@@ -73,6 +74,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             Task { @MainActor in self?.captureStatus = "캡처 중단: \(err.localizedDescription)" }
         }
         installObservers()
+        if !CGPreflightScreenCaptureAccess() { CGRequestScreenCaptureAccess() }
         sensor.setPollingRate(sensor.isAvailable ? 20 : 0)
         idleTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20.0, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.idleTick() }
@@ -145,6 +147,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     }
 
     private func deactivate() {
+        EventLog.shared.log("deactivate", sensor.angle)
         displayLink?.invalidate()
         displayLink = nil
         window?.alphaValue = 0
@@ -209,6 +212,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         Task {
             do {
                 try await capturer.start(displayID: id, pixelWidth: w, pixelHeight: h)
+                EventLog.shared.log("captureStarted", sensor.angle)
                 captureStatus = "캡처 중 (\(w)×\(h))"
             } catch {
                 captureStatus = "캡처 실패: \(error.localizedDescription)"
@@ -241,7 +245,8 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         w.isReleasedWhenClosed = false
         w.alphaValue = 0
         w.animationBehavior = .none
-        w.sharingType = .none   // never feed our own output back into a capture
+        // Never feed our own output back into a capture (debug builds can allow it for screenshots).
+        w.sharingType = UserDefaults.standard.bool(forKey: "debugAllowOverlayCapture") ? .readOnly : .none
         let v = MTKView(frame: CGRect(origin: .zero, size: screen.frame.size), device: renderer.device)
         v.colorPixelFormat = renderer.colorPixelFormat
         v.framebufferOnly = true
@@ -271,6 +276,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
               let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let cb = renderer.queue.makeCommandBuffer() else { return }
         if let (pb, seq) = capturer.frame(newerThan: forcePyramid ? 0 : lastSeq), let (tex, cvTex) = cache.texture(for: pb) {
+            if !renderer.hasSource { EventLog.shared.log("firstFrame", smoothed) }
             renderer.encodePyramid(from: tex, filter: params.filter, into: cb)
             lastSeq = seq
             forcePyramid = false
@@ -280,6 +286,28 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         renderer.encodeEffect(params: params, progress: smoothed, pass: pass, into: cb)
         cb.present(drawable)
         cb.commit()
+    }
+
+    // MARK: Debug
+
+    /// Renders what the overlay currently shows into a PNG and returns a status line (testing aid).
+    func debugSnapshot(to path: String) -> String {
+        var status = "progress=\(smoothed) target=\(target) overlayVisible=\(overlayVisible) alpha=\(window?.alphaValue ?? -1) capture=\(captureStatus) hasSource=\(renderer?.hasSource ?? false) angle=\(sensor.angle.map { String($0) } ?? "nil")"
+        guard let renderer, let pyr = renderer.pyramid else { return status + " (no pyramid)" }
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: pyr.width, height: pyr.height, mipmapped: false)
+        d.usage = [.renderTarget, .shaderRead]; d.storageMode = .shared
+        guard let out = renderer.device.makeTexture(descriptor: d), let cb = renderer.queue.makeCommandBuffer() else { return status }
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = out
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].storeAction = .store
+        renderer.encodeEffect(params: params, progress: smoothed, pass: pass, into: cb)
+        cb.commit(); cb.waitUntilCompleted()
+        if let img = ImageOps.cgImage(from: out), let dest = CGImageDestinationCreateWithURL(URL(fileURLWithPath: path) as CFURL, "public.png" as CFString, 1, nil) {
+            CGImageDestinationAddImage(dest, img, nil); CGImageDestinationFinalize(dest)
+            status += " wrote \(path) \(out.width)x\(out.height)"
+        }
+        return status
     }
 
     // MARK: System events
@@ -292,6 +320,12 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         observers.append(ws.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.didWake() }
         })
+        observers.append(ws.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { EventLog.shared.log("screensDidSleep", self?.sensor.readOnce()) }
+        })
+        observers.append(ws.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { EventLog.shared.log("screensDidWake", self?.sensor.readOnce()); self?.didWake() }
+        })
         observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.screensChanged() }
         })
@@ -299,10 +333,16 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
 
     private func willSleep() {
         clamshellClosedAtSleep = Clamshell.isClosed
+        EventLog.shared.log("willSleep", sensor.angle, clamshellClosedAtSleep ? 1 : 0)
         stopCapture()
     }
 
+    private var lastWakeHandled: CFTimeInterval = -10
     private func didWake() {
+        let now = CACurrentMediaTime()
+        guard now - lastWakeHandled > 2 else { return }   // didWake and screensDidWake both arrive
+        lastWakeHandled = now
+        EventLog.shared.log("didWake", sensor.readOnce(), Clamshell.isClosed ? 1 : 0)
         if !sensor.isAvailable { _ = sensor.openDevice() }
         sensorStatus = sensor.statusText
         if inputMode == .sensor, sensor.isAvailable, let a = sensor.readOnce() {
@@ -318,6 +358,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
 
     private func screensChanged() {
         builtInPresent = Displays.builtInScreen != nil
+        EventLog.shared.log("screensChanged", sensor.angle, builtInPresent ? 1 : 0)
         if !builtInPresent {
             deactivate()
             window?.close(); window = nil; mtkView = nil

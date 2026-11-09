@@ -85,9 +85,11 @@ final class LidAngleSensor {
             guard let self else { return }
             if let a = self.readOnce() {
                 failures = 0
+                if a != self.lock.withLock({ self._angle }) { EventLog.shared.log("angle", a) }
                 self.lock.withLock { self._angle = a; self._timestamp = CACurrentMediaTime() }
             } else {
                 failures += 1
+                if failures == 1 { EventLog.shared.log("sensorReadFailed") }
                 if failures == 30 { _ = self.openDevice() }   // e.g. after sleep/wake
             }
         }
