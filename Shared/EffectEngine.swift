@@ -18,7 +18,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         didSet {
             guard params != oldValue else { return }
             params.save()
-            if params.filter != oldValue.filter { forcePyramid = true }
+            if params.effectiveFilter != oldValue.effectiveFilter { forcePyramid = true }
             evaluate()
         }
     }
@@ -277,7 +277,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
               let cb = renderer.queue.makeCommandBuffer() else { return }
         if let (pb, seq) = capturer.frame(newerThan: forcePyramid ? 0 : lastSeq), let (tex, cvTex) = cache.texture(for: pb) {
             if !renderer.hasSource { EventLog.shared.log("firstFrame", smoothed) }
-            renderer.encodePyramid(from: tex, filter: params.filter, into: cb)
+            renderer.encodePyramid(from: tex, filter: params.effectiveFilter, into: cb)
             lastSeq = seq
             forcePyramid = false
             cb.addCompletedHandler { _ in _ = cvTex }

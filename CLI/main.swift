@@ -39,7 +39,7 @@ let out = renderer.device.makeTexture(descriptor: od)!
 
 do {
     let cb = renderer.queue.makeCommandBuffer()!
-    renderer.encodePyramid(from: src, filter: params.filter, into: cb)
+    renderer.encodePyramid(from: src, filter: params.effectiveFilter, into: cb)
     cb.commit(); cb.waitUntilCompleted()
 }
 

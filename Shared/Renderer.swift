@@ -24,11 +24,33 @@ struct EffectUniforms {
     var hasSource: Int32 = 0
 }
 
+/// Uniform block shared with `cover_fs` (layout must match Shaders.metal).
+struct CoverUniforms {
+    var tilt: Float = 0
+    var camDist: Float = 3.5
+    var camHeight: Float = 0.5
+    var aspect: Float = 1.5
+    var wipe: Float = 0
+    var lodOffset: Float = 0
+    var maxLevel: Float = 0
+    var contentShift: Float = 0
+    var blurGain: Float = 2.5
+    var blurStart: Float = 0
+    var blurEnd: Float = 0.9
+    var lodScale: Float = 8
+    var shadeLow: Float = 0.25
+    var wipeShadeGain: Float = 2.75
+    var edgeBand: Float = 0.1
+    var hasSource: Int32 = 0
+    var towardHinge: Int32 = 1
+}
+
 /// Builds a blur pyramid from a source texture and composites the gradient blur + shading.
 final class EffectRenderer {
     let device: MTLDevice
     let queue: MTLCommandQueue
     private let effectPipeline: MTLRenderPipelineState
+    private let coverPipeline: MTLRenderPipelineState
     private let copyPipeline: MTLComputePipelineState
     private let tentPipeline: MTLComputePipelineState
     private let boxPipeline: MTLComputePipelineState
@@ -55,6 +77,8 @@ final class EffectRenderer {
         desc.fragmentFunction = library.makeFunction(name: "effect_fs")
         desc.colorAttachments[0].pixelFormat = colorPixelFormat
         effectPipeline = try device.makeRenderPipelineState(descriptor: desc)
+        desc.fragmentFunction = library.makeFunction(name: "cover_fs")
+        coverPipeline = try device.makeRenderPipelineState(descriptor: desc)
         copyPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "copy_to_level0")!)
         tentPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "downsample_tent")!)
         boxPipeline = try device.makeComputePipelineState(function: library.makeFunction(name: "downsample_box")!)
@@ -85,7 +109,7 @@ final class EffectRenderer {
         enc.setTexture(source, index: 0)
         enc.setTexture(levelViews[0], index: 1)
         dispatch(copyPipeline, levelViews[0].width, levelViews[0].height)
-        let pso = filter == .smooth ? tentPipeline : boxPipeline
+        let pso = filter == .smooth ? tentPipeline : boxPipeline   // .reference and .mipmap use box mipmaps
         enc.setComputePipelineState(pso)
         for i in 1..<levelViews.count {
             enc.setTexture(levelViews[i - 1], index: 0)
@@ -123,13 +147,49 @@ final class EffectRenderer {
         u.minShading = Float(params.minShading)
         u.maxLevel = Float((pyramid?.mipmapLevelCount ?? 1) - 1)
         u.direction = params.direction == .towardOuterEdge ? 0 : 1
-        u.filterMode = params.filter == .smooth ? 0 : 1
+        u.filterMode = params.filter == .mipmap ? 1 : 0
         u.hasSource = hasSource ? 1 : 0
+        return u
+    }
+
+    func coverUniforms(params: EffectParams, progress p: Double) -> CoverUniforms {
+        var u = CoverUniforms()
+        let closing = max(0, min(1, 1 - p))
+        let tiltDeg = min(90, params.coverTiltMax * closing)
+        u.tilt = Float(tiltDeg * .pi / 180)
+        u.camDist = Float(params.coverCameraDistance)
+        let f = tiltDeg / 90
+        u.camHeight = Float(params.coverCameraHeightStart + (params.coverCameraHeightEnd - params.coverCameraHeightStart) * f)
+        if let pyr = pyramid {
+            u.aspect = Float(Double(pyr.width) / Double(pyr.height))
+            u.lodOffset = Float(log2(Double(pyr.height) / max(1, params.coverReferencePx)))
+            u.maxLevel = Float(pyr.mipmapLevelCount - 1)
+        }
+        u.wipe = Float(params.coverWipeAtFullTilt * tiltDeg / 90)
+        u.contentShift = Float(params.coverContentShift)
+        u.blurGain = Float(params.coverBlurGain)
+        u.blurStart = Float(params.coverBlurStart)
+        u.blurEnd = Float(params.coverBlurEnd)
+        u.lodScale = Float(params.coverLodScale)
+        u.shadeLow = Float(params.coverShadeLow)
+        u.wipeShadeGain = Float(params.coverWipeShadeGain)
+        u.edgeBand = Float(params.coverEdgeBand)
+        u.hasSource = hasSource ? 1 : 0
+        u.towardHinge = params.coverTowardHinge ? 1 : 0
         return u
     }
 
     func encodeEffect(params: EffectParams, progress: Double, pass: MTLRenderPassDescriptor, into cb: MTLCommandBuffer) {
         guard let enc = cb.makeRenderCommandEncoder(descriptor: pass) else { return }
+        if params.style == .coverPanel {
+            var u = coverUniforms(params: params, progress: progress)
+            enc.setRenderPipelineState(coverPipeline)
+            if let pyr = pyramid { enc.setFragmentTexture(pyr, index: 0) } else { u.hasSource = 0 }
+            enc.setFragmentBytes(&u, length: MemoryLayout<CoverUniforms>.stride, index: 0)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            enc.endEncoding()
+            return
+        }
         var u = uniforms(params: params, progress: progress)
         enc.setRenderPipelineState(effectPipeline)
         if let pyr = pyramid { enc.setFragmentTexture(pyr, index: 0) } else { u.hasSource = 0 }

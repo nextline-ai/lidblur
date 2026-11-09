@@ -97,9 +97,9 @@ final class CompareModel: ObservableObject {
 
     func render(params: EffectParams) {
         guard let renderer, let src = sourceTexture, let out = output, let cb = renderer.queue.makeCommandBuffer() else { return }
-        if pyramidFilter != params.filter {
-            renderer.encodePyramid(from: src, filter: params.filter, into: cb)
-            pyramidFilter = params.filter
+        if pyramidFilter != params.effectiveFilter {
+            renderer.encodePyramid(from: src, filter: params.effectiveFilter, into: cb)
+            pyramidFilter = params.effectiveFilter
         }
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = out

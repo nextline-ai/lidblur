@@ -9,8 +9,16 @@ enum GradientDirection: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// Overall look.
+enum EffectStyle: String, Codable, CaseIterable, Identifiable {
+    case coverPanel   // the display tilts like a folding phone's outer display (trapezoid + blur + shading)
+    case gradient     // flat gradient blur + shading only (no geometry)
+    var id: String { rawValue }
+}
+
 /// How blurred levels are reconstructed.
 enum BlurFilter: String, Codable, CaseIterable, Identifiable {
+    case reference // box mipmaps + B-spline upsampling per level (matches the reference look)
     case smooth   // tent-filtered pyramid + B-spline upsampling (no blocky artifacts)
     case mipmap   // plain box mipmaps + trilinear (closest to a naive textureLod)
     var id: String { rawValue }
@@ -31,9 +39,34 @@ struct EffectParams: Codable, Equatable {
         d("shadeUniform", &shadeUniform); d("shadeUniformCurve", &shadeUniformCurve); d("shadeEdge", &shadeEdge)
         d("shadeEdgeFull", &shadeEdgeFull); d("shadeEdgeCurve", &shadeEdgeCurve); d("shadeStart", &shadeStart)
         d("shadeCurve", &shadeCurve); d("sideShade", &sideShade); d("sideWidth", &sideWidth); d("minShading", &minShading)
+        d("style", &style); d("coverTiltMax", &coverTiltMax); d("coverCameraDistance", &coverCameraDistance)
+        d("coverCameraHeightStart", &coverCameraHeightStart); d("coverCameraHeightEnd", &coverCameraHeightEnd)
+        d("coverWipeAtFullTilt", &coverWipeAtFullTilt); d("coverBlurGain", &coverBlurGain); d("coverBlurStart", &coverBlurStart)
+        d("coverBlurEnd", &coverBlurEnd); d("coverLodScale", &coverLodScale); d("coverReferencePx", &coverReferencePx)
+        d("coverShadeLow", &coverShadeLow); d("coverWipeShadeGain", &coverWipeShadeGain); d("coverEdgeBand", &coverEdgeBand)
+        d("coverContentShift", &coverContentShift); d("coverTowardHinge", &coverTowardHinge)
         d("lerpDrag", &lerpDrag); d("lerpSnap", &lerpSnap)
         d("openAngle", &openAngle); d("closedAngle", &closedAngle); d("angleCurve", &angleCurve)
     }
+
+    var style: EffectStyle = .coverPanel
+
+    // Cover-panel style (values follow the reference effect)
+    var coverTiltMax: Double = 90          // degrees of virtual tilt at full close (90 = edge-on)
+    var coverCameraDistance: Double = 3.44 // virtual camera distance in display heights
+    var coverCameraHeightStart: Double = 0.5   // camera height above the hinge at rest (display heights)
+    var coverCameraHeightEnd: Double = 0.28    // ... at full tilt
+    var coverWipeAtFullTilt: Double = 0.5  // blur/shade driver at full tilt (= tilt / 180 deg)
+    var coverBlurGain: Double = 2.5
+    var coverBlurStart: Double = 0.0
+    var coverBlurEnd: Double = 0.9
+    var coverLodScale: Double = 8
+    var coverReferencePx: Double = 775     // size of the reference blur texture across the panel
+    var coverShadeLow: Double = 0.25
+    var coverWipeShadeGain: Double = 2.75
+    var coverEdgeBand: Double = 0.1
+    var coverContentShift: Double = 0.23
+    var coverTowardHinge: Bool = true
 
     // Spatial gradient (t = 0 at the hinge, 1 at the outer edge of the lid)
     var direction: GradientDirection = .towardOuterEdge
@@ -117,6 +150,9 @@ struct AnyKey: CodingKey {
 }
 
 extension EffectParams {
+    /// Pyramid filter actually used for the current style.
+    var effectiveFilter: BlurFilter { style == .coverPanel ? .reference : filter }
+
     /// Blur amount (0...1) for closing amount c = 1 - progress.
     func blurAmount(closing c: Double) -> Double {
         guard c > 0 else { return 0 }

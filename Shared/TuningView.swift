@@ -22,11 +22,39 @@ struct TuningView: View {
                 Button("닫힘→열림 대체 애니메이션 미리보기") { engine.playOpenAnimation() }
                 EventLogToggle()
             }
+            Section("스타일") {
+                Picker("효과", selection: $engine.params.style) {
+                    Text("바깥 화면처럼 기울기 (사다리꼴 + 블러)").tag(EffectStyle.coverPanel)
+                    Text("평면 그라디언트 블러").tag(EffectStyle.gradient)
+                }
+            }
+            if engine.params.style == .coverPanel {
+                Section("기울기 / 원근") {
+                    ParamSlider("완전히 닫힐 때 기울기", value: $engine.params.coverTiltMax, range: 0...90, format: "%.0f°")
+                    ParamSlider("카메라 거리 (화면 높이 배)", value: $engine.params.coverCameraDistance, range: 1...12)
+                    ParamSlider("카메라 높이 (시작)", value: $engine.params.coverCameraHeightStart, range: 0...1)
+                    ParamSlider("카메라 높이 (끝)", value: $engine.params.coverCameraHeightEnd, range: 0...1)
+                    ParamSlider("내용 밀림", value: $engine.params.coverContentShift, range: 0...0.5, format: "%.3f")
+                    Toggle("블러·음영이 경첩(아래) 쪽으로 강해짐", isOn: $engine.params.coverTowardHinge)
+                }
+                Section("블러 / 음영 (원본 공식)") {
+                    ParamSlider("완전 기울기에서 wipe", value: $engine.params.coverWipeAtFullTilt, range: 0...1)
+                    ParamSlider("블러 이득", value: $engine.params.coverBlurGain, range: 0...6)
+                    ParamSlider("블러 구간 시작", value: $engine.params.coverBlurStart, range: 0...1)
+                    ParamSlider("블러 구간 끝", value: $engine.params.coverBlurEnd, range: 0.05...1)
+                    ParamSlider("LOD 배율", value: $engine.params.coverLodScale, range: 0...12)
+                    ParamSlider("기준 텍스처 크기(px)", value: $engine.params.coverReferencePx, range: 200...3000, format: "%.0f")
+                    ParamSlider("블러 연동 최저 밝기", value: $engine.params.coverShadeLow, range: 0...1)
+                    ParamSlider("경첩 쪽 어두워짐 이득", value: $engine.params.coverWipeShadeGain, range: 0...6)
+                    ParamSlider("좌우 가장자리 띠", value: $engine.params.coverEdgeBand, range: 0.001...0.5, format: "%.3f")
+                }
+            }
             Section("덮개 각도 → 진행도") {
                 ParamSlider("효과 시작 각도", value: $engine.params.openAngle, range: 30...140, format: "%.0f°")
                 ParamSlider("최대 효과 각도", value: $engine.params.closedAngle, range: 0...90, format: "%.0f°")
                 ParamSlider("매핑 곡선 지수", value: $engine.params.angleCurve, range: 0.3...3)
             }
+            if engine.params.style == .gradient {
             Section("블러") {
                 Picker("방향", selection: $engine.params.direction) {
                     Text("위쪽(덮개 끝)으로 강해짐").tag(GradientDirection.towardOuterEdge)
@@ -57,6 +85,7 @@ struct TuningView: View {
                 ParamSlider("좌우 가장자리 어두워짐", value: $engine.params.sideShade, range: 0...1)
                 ParamSlider("좌우 가장자리 폭", value: $engine.params.sideWidth, range: 0.005...0.3, format: "%.3f")
                 ParamSlider("최소 밝기", value: $engine.params.minShading, range: 0...1)
+            }
             }
             Section("스무딩") {
                 ParamSlider("lerp (입력 추종)", value: $engine.params.lerpDrag, range: 0.01...1, format: "%.3f")

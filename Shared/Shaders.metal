@@ -144,3 +144,84 @@ fragment float4 effect_fs(VOut in [[stage_in]],
     shade = max(shade, u.minShading);
     return float4(c.rgb * shade, 1.0);
 }
+
+// ---------------------------------------------------------------------------
+// Cover-panel style: the display content is treated as a panel hinged at the bottom edge that
+// tilts toward the viewer (like the outer display of a folding phone swinging shut).
+// Each pixel casts a ray from a virtual camera and intersects the tilted panel, which gives the
+// exact trapezoid and foreshortening. Blur and shading grow toward the hinge with the tilt.
+// ---------------------------------------------------------------------------
+
+struct CoverUniforms {
+    float tilt;            // radians, 0 = flat (identity), pi/2 = edge-on
+    float camDist;         // camera distance in display heights
+    float camHeight;       // camera height above the hinge in display heights
+    float aspect;          // display width / height
+    float wipe;            // 0..0.5, drives blur + shading (tilt / pi)
+    float lodOffset;       // log2(display height / reference blur texture size)
+    float maxLevel;
+    float contentShift;    // content slides toward the outer edge by contentShift * wipe
+    float blurGain;
+    float blurStart;
+    float blurEnd;
+    float lodScale;
+    float shadeLow;
+    float wipeShadeGain;
+    float edgeBand;
+    int   hasSource;
+    int   towardHinge;     // 1: blur/shade grow toward the hinge (reference), 0: toward the outer edge
+};
+
+fragment float4 cover_fs(VOut in [[stage_in]],
+                         texture2d<float> pyramid [[texture(0)]],
+                         constant CoverUniforms& u [[buffer(0)]]) {
+    if (u.hasSource == 0) return float4(0, 0, 0, 1);
+
+    // World units = display height. Hinge along y = 0, z = 0; the display (image plane) is z = 0, y in [0, 1].
+    // The camera sits at (0, camHeight, camDist) and looks through the display as a window (off-axis),
+    // so the hinge always stays on the display's bottom edge. The panel tilts with its outer edge
+    // receding: panel point (x, q) -> (x, q cos t, -q sin t).
+    float A = u.aspect, D = u.camDist, hc = u.camHeight;
+    float X = (in.uv.x - 0.5) * A;
+    float Ys = 1.0 - in.uv.y;
+    float st = sin(u.tilt), ct = cos(u.tilt);
+    float num = hc * st + D * ct;
+    float den = D * ct - (Ys - hc) * st;
+    if (den <= 1e-6) return float4(0, 0, 0, 1);
+    float lam = num / den;
+    if (lam <= 0.0) return float4(0, 0, 0, 1);
+    float3 P = float3(lam * X, hc + lam * (Ys - hc), D * (1.0 - lam));
+    float q = P.y * ct - P.z * st;                    // distance from the hinge along the panel
+    float2 tuv = float2(P.x / A + 0.5, 1.0 - q);      // panel texture coordinate (y down)
+
+    // Anti-aliased panel coverage.
+    float2 fw = max(fwidth(tuv), float2(1e-6));
+    float cov = smoothstep(0.0, fw.x, tuv.x) * smoothstep(0.0, fw.x, 1.0 - tuv.x)
+              * smoothstep(0.0, fw.y, tuv.y) * smoothstep(0.0, fw.y, 1.0 - tuv.y);
+    if (cov <= 0.0) return float4(0, 0, 0, 1);
+
+    // Distance from the outer edge (0) to the hinge (1).
+    float d = u.towardHinge != 0 ? tuv.y : 1.0 - tuv.y;
+    float n = saturate((d - u.blurStart) / max(u.blurEnd - u.blurStart, 1e-4) * u.wipe * u.blurGain);
+    float blurArea = sqrt(n / 0.75);
+    float lodBlur = blurArea * u.lodScale;
+    lodBlur += u.lodOffset * saturate(lodBlur);         // keep native sharpness when there is no blur
+
+    // Content slides slightly as the panel tilts.
+    float shiftDir = u.towardHinge != 0 ? 1.0 : -1.0;
+    float2 suv = tuv + float2(0.0, shiftDir * u.contentShift * u.wipe);
+
+    // Perspective minification so the foreshortened panel does not alias.
+    float2 size = float2(pyramid.get_width(), pyramid.get_height());
+    float2 dx = dfdx(suv * size), dy = dfdy(suv * size);
+    float lodPersp = 0.5 * log2(max(max(dot(dx, dx), dot(dy, dy)), 1e-8));
+    float lod = max(lodBlur, lodPersp);
+    float4 c = sample_lod(pyramid, saturate(suv), lod, u.maxLevel, 0);
+
+    // Shading: blur-linked darkening, darkening toward the hinge, and the panel's side edges.
+    float shade = mix(u.shadeLow, 1.0, smoothstep(1.3, 0.9, blurArea));
+    shade *= smoothstep(1.0, 1.0 - u.edgeBand, abs(tuv.x - 0.5) * 2.0);
+    shade *= 1.0 - saturate(u.wipe * u.wipeShadeGain) * smoothstep(0.0, 1.0, d);
+    float edges = smoothstep(1.1, 1.0, suv.y) * smoothstep(-0.1, 0.0, suv.y);
+    return float4(c.rgb * shade * edges * cov, 1.0);
+}
