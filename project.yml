@@ -1,0 +1,59 @@
+name: LidBlur
+options:
+  bundleIdPrefix: studio.xtower
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: 6HV24C77H5
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+targets:
+  LidBlur:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.LidBlur
+        PRODUCT_NAME: LidBlur
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/LidBlur.entitlements
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_APP_SANDBOX: YES
+  BlurLab:
+    type: application
+    platform: macOS
+    sources:
+      - path: Lab
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: studio.xtower.BlurLab
+        PRODUCT_NAME: BlurLab
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        CODE_SIGN_ENTITLEMENTS: Lab/BlurLab.entitlements
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+  lidblur-render:
+    type: tool
+    platform: macOS
+    sources:
+      - path: CLI
+      - path: Shared/EffectParams.swift
+      - path: Shared/Renderer.swift
+      - path: Shared/Shaders.metal
+    settings:
+      base:
+        PRODUCT_NAME: lidblur-render
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: NO
