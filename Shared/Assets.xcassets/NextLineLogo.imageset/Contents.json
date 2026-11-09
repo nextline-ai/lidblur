@@ -1,0 +1,7 @@
+{
+  "images" : [
+    { "filename" : "nextline.png", "idiom" : "universal" },
+    { "appearances" : [ { "appearance" : "luminosity", "value" : "dark" } ], "filename" : "nextline-dark.png", "idiom" : "universal" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}

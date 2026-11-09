@@ -24,12 +24,12 @@ struct LidBlurApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("LidBlur 튜닝", id: "tuning") {
+        Window("LidBlur", id: "tuning") {
             VStack(spacing: 0) {
                 if !engine.screenPermission { PermissionBanner(engine: engine) }
                 TabView {
                     TuningView(engine: engine).tabItem { Text("튜닝") }
-                    CompareView(engine: engine).tabItem { Text("이미지 비교") }
+                    AboutView().tabItem { Text("About") }
                 }
             }
             .frame(minWidth: 760, minHeight: 640)
@@ -60,7 +60,7 @@ struct MenuContent: View {
                 }
             Divider()
             HStack {
-                Button("튜닝 / 비교…") { openWindow(id: "tuning"); NSApp.activate() }
+                Button("튜닝 / About…") { openWindow(id: "tuning"); NSApp.activate() }
                 Spacer()
                 Button("종료") { NSApp.terminate(nil) }
             }

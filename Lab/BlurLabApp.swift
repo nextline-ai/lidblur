@@ -26,7 +26,7 @@ struct LabRootView: View {
             }
             TabView {
                 TuningView(engine: engine).tabItem { Text("튜닝") }
-                CompareView(engine: engine).tabItem { Text("이미지 비교") }
+                    AboutView().tabItem { Text("About") }
             }
         }
     }
