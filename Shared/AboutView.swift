@@ -15,9 +15,10 @@ struct AboutView: View {
     var body: some View {
         VStack(spacing: 28) {
             VStack(spacing: 6) {
-                Image(systemName: "laptopcomputer")
-                    .font(.system(size: 44, weight: .light))
-                    .foregroundStyle(.secondary)
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 96, height: 96)
                 Text(appName).font(.title.weight(.semibold))
                 Text(version).font(.callout).foregroundStyle(.secondary)
             }
