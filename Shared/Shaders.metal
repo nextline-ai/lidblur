@@ -201,6 +201,7 @@ fragment float4 cover_fs(VOut in [[stage_in]],
     float2 hw = 0.5 * fw;   // centred on the boundary, so the flat panel is an exact identity
     float cov = smoothstep(-hw.x, hw.x, tuv.x) * smoothstep(-hw.x, hw.x, 1.0 - tuv.x)
               * smoothstep(-hw.y, hw.y, tuv.y) * smoothstep(-hw.y, hw.y, 1.0 - tuv.y);
+    if (u.tilt <= 1e-5) cov = 1.0;     // flat: exact identity at any resolution (odd sizes included)
     if (cov <= 0.0) return float4(0, 0, 0, 1);
 
     // Distance from the outer edge (0) to the hinge (1).
