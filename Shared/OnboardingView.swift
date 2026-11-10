@@ -18,22 +18,22 @@ struct OnboardingView: View {
                 Image(nsImage: AppIconImage.current)
                     .resizable().frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("LidBlur 시작하기").font(.title2.weight(.semibold))
-                    Text("덮개를 닫고 열 때, 화면이 접히는 패널처럼 기울며 흐려지고 어두워집니다.")
+                    Text("Get Started with LidBlur").font(.title2.weight(.semibold))
+                    Text("When you close and open the lid, the screen tilts like a folding panel, blurring and dimming.")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
             VStack(spacing: 0) {
-                StepRow(number: 1, title: "화면 기록 권한",
+                StepRow(number: 1, title: "Screen Recording Permission",
                         detail: permission
-                            ? "허용됨. 화면 내용을 흐리게 그릴 수 있습니다."
-                            : "효과를 그리려면 화면을 읽어야 합니다. 화면 내용은 기기 밖으로 나가지 않습니다.",
+                            ? "Allowed. LidBlur can draw the screen blurred."
+                            : "To draw the effect, LidBlur needs to read the screen. Screen content never leaves your Mac.",
                         done: permission) {
                     if !permission {
                         HStack {
-                            Button(requested ? "시스템 설정 열기" : "권한 허용하기") {
+                            Button(requested ? LocalizedStringKey("Open System Settings") : LocalizedStringKey("Allow Permission")) {
                                 if requested {
                                     NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
                                 } else {
@@ -43,25 +43,25 @@ struct OnboardingView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             if requested {
-                                Button("LidBlur 다시 시작") { Relaunch.now() }
+                                Button("Relaunch LidBlur") { Relaunch.now() }
                             }
                         }
                         if requested {
-                            Text("설정에서 LidBlur를 켠 뒤, 바뀐 권한을 적용하려면 다시 시작이 필요할 수 있습니다.")
+                            Text("After turning on LidBlur in Settings, you may need to relaunch it for the change to take effect.")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }
                 Divider().padding(.leading, 44)
-                StepRow(number: 2, title: "덮개 각도 센서",
+                StepRow(number: 2, title: "Lid Angle Sensor",
                         detail: engine.sensor.isAvailable
-                            ? "사용 가능. 덮개 각도를 실시간으로 따라갑니다."
-                            : "이 Mac에서는 찾지 못했습니다. 덮개를 열 때 시간 기반 애니메이션으로 대신합니다.",
+                            ? "Available. LidBlur follows the lid angle in real time."
+                            : "Not found on this Mac. A timed animation plays when you open the lid instead.",
                         done: engine.sensor.isAvailable, optional: !engine.sensor.isAvailable) { EmptyView() }
                 Divider().padding(.leading, 44)
-                StepRow(number: 3, title: "로그인 시 자동 실행", detail: "Mac을 켤 때마다 메뉴 막대에 자동으로 나타납니다.",
+                StepRow(number: 3, title: "Launch at Login", detail: "Appears in the menu bar every time you start your Mac.",
                         done: launchAtLogin, optional: true) {
-                    Toggle("사용", isOn: $launchAtLogin)
+                    Toggle("On", isOn: $launchAtLogin)
                         .toggleStyle(.switch)
                         .onChange(of: launchAtLogin) { _, on in
                             do { if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
@@ -73,10 +73,10 @@ struct OnboardingView: View {
             .background(RoundedRectangle(cornerRadius: 12).fill(.quaternary.opacity(0.5)))
 
             HStack {
-                Text("설정은 메뉴 막대의 LidBlur 아이콘에서 언제든 바꿀 수 있습니다.")
+                Text("You can change settings anytime from the LidBlur icon in the menu bar.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button(permission ? "시작하기" : "나중에") { onDone() }
+                Button(permission ? LocalizedStringKey("Get Started") : LocalizedStringKey("Later")) { onDone() }
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -88,8 +88,8 @@ struct OnboardingView: View {
 
 private struct StepRow<Accessory: View>: View {
     let number: Int
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     let done: Bool
     var optional = false
     @ViewBuilder var accessory: () -> Accessory

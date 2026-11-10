@@ -31,7 +31,7 @@ struct LidBlurApp: App {
             VStack(spacing: 0) {
                 if !engine.screenPermission { PermissionBanner(engine: engine) }
                 TabView {
-                    TuningView(engine: engine).tabItem { Text("튜닝") }
+                    TuningView(engine: engine).tabItem { Text("Tuning") }
                     AboutView().tabItem { Text("About") }
                 }
             }
@@ -50,25 +50,25 @@ struct MenuContent: View {
             Text("LidBlur").font(.headline)
             if !engine.screenPermission {
                 PermissionBanner(engine: engine)
-                Button("권한 설정 안내 열기") { OnboardingPresenter.show(engine: engine) }
+                Button("Open Permission Guide") { OnboardingPresenter.show(engine: engine) }
             }
-            Toggle("효과 켜기", isOn: $engine.enabled)
+            Toggle("Enable Effect", isOn: $engine.enabled)
             Group {
                 MenuStatusText(engine: engine, status: engine.status)
             }
             .font(.callout).foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
-            Toggle("센서가 없을 때 열림 애니메이션", isOn: $engine.fallbackOnWake)
-            Toggle("로그인 시 자동 실행", isOn: $launchAtLogin)
+            Toggle("Opening animation when there's no sensor", isOn: $engine.fallbackOnWake)
+            Toggle("Launch at Login", isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { _, on in
                     do { if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
                     catch { launchAtLogin = SMAppService.mainApp.status == .enabled }
                 }
             Divider()
             HStack {
-                Button("튜닝 / About…") { openWindow(id: "tuning"); NSApp.activate() }
+                Button("Tuning / About…") { openWindow(id: "tuning"); NSApp.activate() }
                 Spacer()
-                Button("종료") { NSApp.terminate(nil) }
+                Button("Quit") { NSApp.terminate(nil) }
             }
         }
         .padding(14)
@@ -86,9 +86,9 @@ struct MenuStatusText: View {
     @ObservedObject var status: LiveStatus
     var body: some View {
         if engine.sensor.isAvailable {
-            Text(String(format: "덮개 각도 %@ · 진행도 %.2f", status.angle.map { String(format: "%.0f°", $0) } ?? "—", status.progress))
+            Text(String(format: NSLocalizedString("Lid angle %@ · progress %.2f", comment: "menu status"), status.angle.map { String(format: "%.0f°", $0) } ?? "—", status.progress))
         } else {
-            Text("덮개 각도 센서를 찾지 못했습니다 (\(status.sensorStatus)). 덮개를 열 때 시간 기반 애니메이션으로 대신합니다.")
+            Text("Couldn't find the lid angle sensor (\(status.sensorStatus)). A timed animation plays when you open the lid instead.")
         }
     }
 }

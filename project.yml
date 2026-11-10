@@ -10,6 +10,8 @@ settings:
     DEVELOPMENT_TEAM: 6HV24C77H5
     MACOSX_DEPLOYMENT_TARGET: "15.0"
     ENABLE_HARDENED_RUNTIME: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
   configs:
     Debug:
       # Fixed signing identity so macOS privacy permissions (Screen Recording) survive rebuilds.

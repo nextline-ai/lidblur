@@ -28,12 +28,12 @@ final class ScreenCapturer: NSObject, SCStreamOutput, SCStreamDelegate {
         if isRunning { return }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
-            throw NSError(domain: "LidBlur", code: 1, userInfo: [NSLocalizedDescriptionKey: "내장 디스플레이를 찾지 못했습니다"])
+            throw NSError(domain: "LidBlur", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "Couldn't find the built-in display")])
         }
         let pid = ProcessInfo.processInfo.processIdentifier
         let me = content.applications.filter { $0.processID == pid || $0.bundleIdentifier == Bundle.main.bundleIdentifier }
         guard !me.isEmpty else {
-            throw NSError(domain: "LidBlur", code: 2, userInfo: [NSLocalizedDescriptionKey: "자기 창을 캡처에서 제외할 수 없습니다"])
+            throw NSError(domain: "LidBlur", code: 2, userInfo: [NSLocalizedDescriptionKey: String(localized: "Couldn't exclude LidBlur's own windows from capture")])
         }
         let filter = SCContentFilter(display: display, excludingApplications: me, exceptingWindows: [])
         let config = SCStreamConfiguration()

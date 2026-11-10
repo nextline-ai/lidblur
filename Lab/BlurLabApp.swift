@@ -25,7 +25,7 @@ struct LabRootView: View {
                 PermissionBanner(engine: engine)
             }
             TabView {
-                TuningView(engine: engine).tabItem { Text("튜닝") }
+                TuningView(engine: engine).tabItem { Text("Tuning") }
                     AboutView().tabItem { Text("About") }
             }
         }

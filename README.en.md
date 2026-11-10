@@ -36,10 +36,11 @@ This repository does not publish built apps or installers. Updates come through 
 - macOS 15 or later
 - Works in real time on MacBooks with a lid angle sensor. On Macs without one, a timed animation plays when you open the lid.
 - The effect is drawn on the built-in display only. External displays are left alone.
+- The app is available in English and Korean, following your Mac's language setting.
 
 ## First launch
 
-LidBlur needs the **Screen & System Audio Recording** permission to draw its effect. On first launch a setup window walks you through requesting it, opening System Settings and relaunching the app. To see it again later, choose **권한 설정 안내 열기** (permission guide) from the menu bar icon.
+LidBlur needs the **Screen & System Audio Recording** permission to draw its effect. On first launch a setup window walks you through requesting it, opening System Settings and relaunching the app. To see it again later, choose **Open Permission Guide** from the menu bar icon.
 
 LidBlur reads the screen only so it can draw the current picture tilted and blurred while the lid comes down. It starts reading only when the lid nears the start angle, and stops a few seconds after you open it again.
 

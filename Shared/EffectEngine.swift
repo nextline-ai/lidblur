@@ -85,7 +85,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
         if let r = renderer { textureCache = PixelBufferTextureCache(device: r.device) }
         status.sensorStatus = sensor.statusText
         capturer.onError = { [weak self] err in
-            Task { @MainActor in self?.status.captureStatus = "캡처 중단: \(err.localizedDescription)" }
+            Task { @MainActor in self?.status.captureStatus = String(localized: "Capture stopped: \(err.localizedDescription)") }
         }
         installObservers()
         EffectEngine.shared = self
@@ -261,12 +261,12 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
             startToken = nil
         }
         guard !systemAsleep, !screenLocked, !capturer.isRunning, !captureStarting, let screen = Displays.builtInScreen, let id = screen.displayID else { return }
-        guard CGPreflightScreenCaptureAccess() else { status.captureStatus = "화면 기록 권한 필요"; return }
+        guard CGPreflightScreenCaptureAccess() else { status.captureStatus = String(localized: "Screen Recording permission needed"); return }
         nextStartToken += 1
         let token = nextStartToken
         startToken = token
         captureStartAt = CACurrentMediaTime()
-        status.captureStatus = "캡처 시작 중"
+        status.captureStatus = String(localized: "Starting capture")
         let (w, h) = screen.pixelSize
         let gen = captureGeneration
         Task {
@@ -278,9 +278,9 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
                     return
                 }
                 EventLog.shared.log("captureStarted", sensor.angle)
-                status.captureStatus = "캡처 중 (\(w)×\(h))"
+                status.captureStatus = String(localized: "Capturing (\(w)×\(h))")
             } catch {
-                status.captureStatus = "캡처 실패: \(error.localizedDescription)"
+                status.captureStatus = String(localized: "Capture failed: \(error.localizedDescription)")
             }
             if startToken == token { startToken = nil }
         }
@@ -289,7 +289,7 @@ final class EffectEngine: NSObject, ObservableObject, MTKViewDelegate {
     private func stopCapture() {
         captureGeneration += 1
         Task { await capturer.stop() }
-        status.captureStatus = "대기"
+        status.captureStatus = String(localized: "Idle")
         farSince = nil
     }
 
@@ -483,7 +483,7 @@ final class LiveStatus: ObservableObject {
     @Published var angle: Double?
     @Published var progress: Double = 1
     @Published var sensorStatus: String = ""
-    @Published var captureStatus: String = "대기"
+    @Published var captureStatus: String = String(localized: "Idle")
     @Published var overlayVisible = false
 }
 

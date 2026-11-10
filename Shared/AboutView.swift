@@ -5,7 +5,7 @@ struct AboutView: View {
     private var version: String {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
-        return "버전 \(v) (\(b))"
+        return String(localized: "Version \(v) (\(b))")
     }
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -26,8 +26,8 @@ struct AboutView: View {
             Divider().frame(maxWidth: 420)
 
             HStack(alignment: .top, spacing: 56) {
-                credit(role: "개발", image: "NextLineLogo", name: "NextLine", host: "nextline.work")
-                credit(role: "배포", image: "DeaumLogo", name: "DEAUM", host: "deaum.org")
+                credit(role: "Developer", image: "NextLineLogo", name: "NextLine", host: "nextline.work")
+                credit(role: "Distributor", image: "DeaumLogo", name: "DEAUM", host: "deaum.org")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -38,7 +38,7 @@ struct AboutView: View {
     private let logoHeight: CGFloat = 44
 
     @ViewBuilder
-    private func credit(role: String, image: String, name: String, host: String) -> some View {
+    private func credit(role: LocalizedStringKey, image: String, name: String, host: String) -> some View {
         VStack(spacing: 12) {
             Text(role).font(.caption).foregroundStyle(.secondary)
             Image(image)

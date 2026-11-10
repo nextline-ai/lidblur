@@ -13,7 +13,7 @@ final class LidAngleSensor {
     private var _timestamp: CFTimeInterval = 0
     private var timer: DispatchSourceTimer?
     private let queue = DispatchQueue(label: "work.nextline.lidblur.sensor", qos: .userInteractive)
-    private(set) var statusText: String = "초기화 전"
+    private(set) var statusText: String = String(localized: "Not initialized")
     private var currentHz: Double = 0
     /// Called on the sensor queue whenever the raw angle changes.
     var onChange: ((Double) -> Void)?
@@ -64,7 +64,7 @@ final class LidAngleSensor {
     func openDevice() -> Bool {
         let r = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         guard let set = IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice>, !set.isEmpty else {
-            statusText = r == kIOReturnSuccess ? "센서 없음" : String(format: "센서 열기 실패 (0x%08x)", r)
+            statusText = r == kIOReturnSuccess ? String(localized: "No sensor") : String(format: NSLocalizedString("Couldn't open sensor (0x%08x)", comment: ""), r)
             lock.withLock { device = nil }
             return false
         }
@@ -73,16 +73,16 @@ final class LidAngleSensor {
         // Some environments refuse open() but still allow feature-report reads; try reading either way.
         lock.withLock { device = preferred }
         if o != kIOReturnSuccess, readOnce() == nil {
-            statusText = String(format: "센서 접근 거부 (0x%08x)", o)
+            statusText = String(format: NSLocalizedString("Sensor access denied (0x%08x)", comment: ""), o)
             lock.withLock { device = nil }
             return false
         }
         if let a = readOnce() {
             lock.withLock { _angle = a; _timestamp = CACurrentMediaTime(); segStart = nil; pushSample(a, at: _timestamp) }
-            statusText = "사용 가능"
+            statusText = String(localized: "Available")
             return true
         }
-        statusText = "센서 응답 없음"
+        statusText = String(localized: "Sensor not responding")
         lock.withLock { device = nil }
         return false
     }

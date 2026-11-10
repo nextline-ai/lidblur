@@ -5,6 +5,7 @@
 - 카테고리: 유틸리티
 - 가격: 무료
 - 최소 macOS: 15.0
+- 지원 언어: 한국어, 영어 (앱 내 문자열은 `Shared/Localizable.xcstrings`)
 - 개발: NextLine (nextline.work)
 - 배포: DEAUM (deaum.org)
 
@@ -82,7 +83,7 @@ LidBlur is a menu bar utility. When the MacBook lid is lowered, it draws a full-
 How to test:
 1. Launch LidBlur. The setup window asks for Screen & System Audio Recording permission. Grant it and relaunch if macOS asks.
 2. Slowly lower the lid below about 95°: the screen tilts, blurs and dims. Raise it again and the effect clears.
-3. To test without moving the lid: menu bar icon → "튜닝 / About…" → 입력 "디버그 슬라이더", then move "디버그 진행도".
+3. To test without moving the lid: menu bar icon → "Tuning / About…" → set Input to "Debug slider", then move "Debug progress".
 
 Entitlements:
 - com.apple.security.device.usb: needed to read the built-in lid angle sensor. It is a HID sensor device, read with IOKit HID (IOHIDDeviceGetReport). Nothing else is accessed, and the device is opened read-only.
