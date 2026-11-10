@@ -93,8 +93,8 @@ The overlay window ignores mouse events and never takes focus. It is not shown o
 ## 제출 전 남은 일 (사용자)
 
 - [ ] App Store Connect에서 앱 레코드 생성: 번들 ID `work.nextline.lidblur`, 이름 LidBlur, SKU 예: `lidblur-mac`
-- [ ] 개인정보 처리방침 URL 준비: `Release/PrivacyPolicy.md` 내용을 웹에 게시
-- [ ] 지원 URL 준비 (예: nextline.work/lidblur)
+- [x] 개인정보 처리방침 URL: https://nextline-ai.github.io/lidblur/privacy/ (원본 `docs/privacy.md`)
+- [x] 지원 URL: https://nextline-ai.github.io/lidblur/ (원본 `docs/index.md`)
 - [ ] 스크린샷 준비: 16:10 비율, 1280×800 이상(권장 2880×1800), 1–10장
 - [ ] 앱 개인정보(App Privacy) 설문: "데이터를 수집하지 않음"
 - [ ] 연령 등급: 4+
